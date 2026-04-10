@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Calendário de Prazos — Liderança</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #F4F2F8; --ink: #1E1528; --ink-light: #6E647A; --cream: #EAE5F2; --rule: #D3C9E4;
+    --folha: #4A1A7A; --folha-bg: #EDE5F7; --folha-rule: #C9ADED;
+    --admissao: #2E1060; --admissao-bg: #E6E0F5; --admissao-rule: #B3A0E0;
+    --desliga: #7A1E6A; --desliga-bg: #F5E5F2; --desliga-rule: #DFA8D6;
+    --alt: #5C2080; --alt-bg: #F0E8FA; --alt-rule: #CCAAEE;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--ink); font-family: 'DM Sans', sans-serif; font-size: 14px; line-height: 1.6; min-height: 100vh; }
+  .page { max-width: 860px; margin: 0 auto; padding: 48px 40px 80px; }
+
+  /* MASTHEAD */
+  .masthead { border-top: 3px solid var(--ink); padding-top: 28px; margin-bottom: 40px; display: flex; justify-content: space-between; align-items: flex-start; gap: 20px; flex-wrap: wrap; }
+  .masthead-eyebrow { font-size: 10px; font-weight: 600; letter-spacing: .18em; text-transform: uppercase; color: var(--ink-light); margin-bottom: 10px; }
+  .masthead-title { font-family: 'DM Serif Display', serif; font-size: clamp(28px, 5vw, 48px); line-height: 1.05; letter-spacing: -.02em; }
+  .masthead-title em { font-style: italic; opacity: .55; }
+  .masthead-sub { margin-top: 14px; font-size: 13px; color: var(--ink-light); font-weight: 300; max-width: 500px; line-height: 1.7; border-left: 2px solid var(--rule); padding-left: 14px; }
+
+  /* EDIT BUTTON */
+  .edit-btn { display: flex; align-items: center; gap: 8px; padding: 10px 18px; border-radius: 8px; background: var(--ink); color: #fff; border: none; cursor: pointer; font-family: 'DM Sans', sans-serif; font-size: 12px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; white-space: nowrap; flex-shrink: 0; transition: opacity .2s, transform .15s; margin-top: 6px; }
+  .edit-btn:hover { opacity: .82; transform: translateY(-1px); }
+  .edit-btn.active { background: #28a745; }
+  .edit-btn svg { width: 14px; height: 14px; }
+
+  /* MONTH STRIP */
+  .month-strip { display: flex; overflow-x: auto; border: 1px solid var(--rule); border-radius: 6px; background: #fff; scrollbar-width: thin; scrollbar-color: var(--rule) transparent; width: 100%; }
+  .month-strip::-webkit-scrollbar { display: none; }
+  .month-btn { flex: 1; min-width: 44px; padding: 9px 4px; background: transparent; border: none; border-right: 1px solid var(--rule); cursor: pointer; font-family: 'DM Sans', sans-serif; font-size: 11px; font-weight: 500; color: var(--ink-light); text-transform: uppercase; letter-spacing: .06em; transition: background .15s, color .15s; text-align: center; }
+  .month-btn:last-child { border-right: none; }
+  .month-btn:hover { background: var(--cream); color: var(--ink); }
+  .month-btn.active { background: var(--ink); color: #fff; }
+
+  /* MODAL */
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(30,21,40,.55); backdrop-filter: blur(4px); z-index: 200; align-items: center; justify-content: center; }
+  .modal-overlay.open { display: flex; }
+  .modal { background: #fff; border-radius: 14px; padding: 36px 32px 28px; width: 340px; max-width: 90vw; box-shadow: 0 20px 60px rgba(0,0,0,.18); position: relative; }
+  .modal h3 { font-family: 'DM Serif Display', serif; font-size: 22px; margin-bottom: 6px; }
+  .modal p { font-size: 12.5px; color: var(--ink-light); margin-bottom: 20px; }
+  .modal input { width: 100%; padding: 12px 14px; border: 1.5px solid var(--rule); border-radius: 8px; font-family: 'DM Sans', sans-serif; font-size: 14px; outline: none; transition: border-color .2s; letter-spacing: .08em; }
+  .modal input:focus { border-color: var(--alt); }
+  .modal-error { font-size: 11.5px; color: #c0392b; margin-top: 8px; display: none; }
+  .modal-actions { display: flex; gap: 10px; margin-top: 18px; }
+  .modal-actions button { flex: 1; padding: 11px; border-radius: 8px; border: none; font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 600; cursor: pointer; transition: opacity .2s; }
+  .btn-confirm { background: var(--ink); color: #fff; }
+  .btn-cancel { background: var(--cream); color: var(--ink); }
+  .btn-confirm:hover, .btn-cancel:hover { opacity: .8; }
+  .modal-close { position: absolute; top: 14px; right: 16px; background: none; border: none; font-size: 20px; cursor: pointer; color: var(--ink-light); }
+
+  /* BADGES */
+  .deadline-badges { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 32px; }
+  .badge { display: flex; align-items: center; gap: 8px; padding: 8px 16px; border-radius: 40px; font-size: 12px; font-weight: 600; border: 1.5px solid; cursor: default; transition: transform .15s; }
+  .badge:hover { transform: translateY(-2px); }
+  .badge-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+  .badge-day { font-family: 'DM Serif Display', serif; font-size: 20px; line-height: 1; }
+  .badge-prev-tag { font-size: 9px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; opacity: .6; background: rgba(0,0,0,.08); border-radius: 4px; padding: 1px 5px; margin-left: 2px; }
+
+  /* CARDS */
+  .section-label { font-size: 10px; letter-spacing: .14em; text-transform: uppercase; color: var(--ink-light); margin-bottom: 16px; font-weight: 600; }
+  .cards { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  @media (max-width: 600px) { .cards { grid-template-columns: 1fr; } .masthead { flex-direction: column; } }
+  .card { border-radius: 10px; padding: 24px 22px 22px; border: 1.5px solid; position: relative; overflow: hidden; transition: box-shadow .2s, transform .2s; }
+  .card:hover { box-shadow: 0 8px 28px rgba(0,0,0,.10); transform: translateY(-2px); }
+  .card-folha    { background: var(--folha-bg);    border-color: var(--folha-rule);    color: var(--folha); }
+  .card-admissao { background: var(--admissao-bg); border-color: var(--admissao-rule); color: var(--admissao); }
+  .card-desliga  { background: var(--desliga-bg);  border-color: var(--desliga-rule);  color: var(--desliga); }
+  .card-alt      { background: var(--alt-bg);      border-color: var(--alt-rule);      color: var(--alt); }
+  .card-full { grid-column: 1 / -1; }
+
+  .deadline-highlight { display: inline-flex; align-items: baseline; gap: 6px; background: currentColor; border-radius: 10px; padding: 10px 18px 10px 14px; margin-bottom: 16px; }
+  .deadline-highlight-day { font-family: 'DM Serif Display', serif; font-size: 42px; line-height: 1; color: #fff; letter-spacing: -.03em; }
+  .deadline-highlight-info { display: flex; flex-direction: column; }
+  .deadline-highlight-label { font-size: 8.5px; font-weight: 700; letter-spacing: .15em; text-transform: uppercase; color: rgba(255,255,255,.65); line-height: 1.2; }
+  .deadline-highlight-sub { font-size: 11px; font-weight: 400; color: rgba(255,255,255,.85); margin-top: 1px; }
+  .card-tag { font-size: 9px; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; opacity: .6; margin-bottom: 6px; }
+  .card-title { font-family: 'DM Serif Display', serif; font-size: 19px; line-height: 1.2; margin-bottom: 8px; }
+  .card-body { font-size: 12.5px; line-height: 1.65; opacity: .8; font-weight: 300; }
+
+  .exceptions { margin-top: 12px; padding-top: 10px; border-top: 1px dashed currentColor; opacity: .6; }
+  .exceptions-inner { opacity: 1; }
+  .exceptions-title { font-size: 9px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; margin-bottom: 4px; display: block; opacity: .7; }
+  .exceptions-list { list-style: none; font-size: 11.5px; font-weight: 300; }
+  .exceptions-list li::before { content: "→ "; opacity: .5; }
+
+  /* EDIT MODE */
+  .editable { outline: none; border-radius: 4px; transition: background .2s; }
+  body.edit-mode .editable { background: rgba(255,255,255,.45); cursor: text; box-shadow: 0 0 0 1.5px rgba(255,255,255,.6); padding: 2px 5px; margin: -2px -5px; }
+  body.edit-mode .editable:focus { background: rgba(255,255,255,.7); }
+  .edit-hint { display: none; font-size: 10px; font-weight: 500; letter-spacing: .06em; background: rgba(255,255,255,.3); color: rgba(255,255,255,.9); border-radius: 4px; padding: 2px 7px; margin-left: 8px; vertical-align: middle; }
+  body.edit-mode .edit-hint { display: inline; }
+  .edit-bar { display: none; position: fixed; bottom: 0; left: 0; right: 0; background: var(--ink); color: #fff; padding: 12px 24px; text-align: center; font-size: 12px; font-weight: 500; letter-spacing: .04em; z-index: 100; }
+  body.edit-mode .edit-bar { display: block; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- MASTHEAD -->
+  <div class="masthead">
+    <div class="masthead-left">
+      <p class="masthead-eyebrow">Departamento Pessoal &nbsp;·&nbsp; Uso interno</p>
+      <h1 class="masthead-title">Calendário de Prazos<br><em>para Liderança</em></h1>
+      <p class="masthead-sub">Prazos mensais para movimentações de pessoal. O cumprimento dessas datas garante o fechamento correto da folha e o fluxo adequado de pagamentos.</p>
+      <div style="margin-top:16px;">
+        <p style="font-size:9px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-light);margin-bottom:8px;">Selecionar mês</p>
+        <div class="month-strip" id="monthStrip"></div>
+      </div>
+    </div>
+    <button class="edit-btn" id="editBtn" onclick="openModal()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+      Editar
+    </button>
+  </div>
+
+  <!-- BADGES -->
+  <div class="deadline-badges" id="deadlineBadges"></div>
+
+  <p class="section-label">Detalhamento dos prazos</p>
+
+  <!-- CARDS -->
+  <div class="cards">
+
+    <!-- Folha -->
+    <div class="card card-folha">
+      <p class="card-tag">Mensal</p>
+      <div class="deadline-highlight">
+        <div class="deadline-highlight-day editable" contenteditable="false" data-field="folha-day">20</div>
+        <div class="deadline-highlight-info">
+          <span class="deadline-highlight-label">Data limite para envio <span class="edit-hint">✎</span></span>
+          <span class="deadline-highlight-sub editable" contenteditable="false" data-field="folha-sub">de cada mês</span>
+        </div>
+      </div>
+      <h2 class="card-title editable" contenteditable="false" data-field="folha-title">Fechamento da Folha de Pagamento</h2>
+      <p class="card-body editable" contenteditable="false" data-field="folha-body">Bônus, premiações e comissões devem ser enviados com antecedência para que sejam processados no ciclo correto.</p>
+    </div>
+
+    <!-- Admissões -->
+    <div class="card card-admissao">
+      <p class="card-tag">Mensal</p>
+      <div class="deadline-highlight">
+        <div class="deadline-highlight-day editable" contenteditable="false" data-field="adm-day">25</div>
+        <div class="deadline-highlight-info">
+          <span class="deadline-highlight-label">Data limite <span class="edit-hint">✎</span></span>
+          <span class="deadline-highlight-sub editable" contenteditable="false" data-field="adm-sub">de cada mês</span>
+        </div>
+      </div>
+      <h2 class="card-title editable" contenteditable="false" data-field="adm-title">Admissões</h2>
+      <p class="card-body editable" contenteditable="false" data-field="adm-body">Após o prazo, o colaborador será admitido apenas no mês seguinte. Planeje com antecedência para evitar atrasos no início das atividades.</p>
+    </div>
+
+    <!-- Desligamentos -->
+    <div class="card card-desliga">
+      <p class="card-tag">Mensal · Iniciativa da empresa</p>
+      <div class="deadline-highlight">
+        <div class="deadline-highlight-day editable" contenteditable="false" data-field="des-day">22</div>
+        <div class="deadline-highlight-info">
+          <span class="deadline-highlight-label">Data limite <span class="edit-hint">✎</span></span>
+          <span class="deadline-highlight-sub editable" contenteditable="false" data-field="des-sub">de cada mês</span>
+        </div>
+      </div>
+      <h2 class="card-title editable" contenteditable="false" data-field="des-title">Desligamentos</h2>
+      <p class="card-body editable" contenteditable="false" data-field="des-body">Informe com a maior antecedência possível. O planejamento prévio é fundamental para garantir o processamento dentro do mês.</p>
+      <div class="exceptions"><div class="exceptions-inner">
+        <span class="exceptions-title">Exceções ao prazo</span>
+        <ul class="exceptions-list">
+          <li class="editable" contenteditable="false" data-field="des-exc1">Justa causa</li>
+          <li class="editable" contenteditable="false" data-field="des-exc2">Término de contrato de experiência</li>
+          <li class="editable" contenteditable="false" data-field="des-exc3">Pedido de demissão</li>
+        </ul>
+      </div></div>
+    </div>
+
+    <!-- Alterações -->
+    <div class="card card-alt card-full">
+      <p class="card-tag">Mês anterior à mudança</p>
+      <div class="deadline-highlight" style="margin-bottom:14px">
+        <div class="deadline-highlight-day editable" contenteditable="false" data-field="alt-day">20</div>
+        <div class="deadline-highlight-info">
+          <span class="deadline-highlight-label">Data limite <span class="edit-hint">✎</span></span>
+          <span class="deadline-highlight-sub editable" contenteditable="false" data-field="alt-sub">do mês anterior</span>
+        </div>
+      </div>
+      <h2 class="card-title editable" contenteditable="false" data-field="alt-title">Alterações Contratuais</h2>
+      <p class="card-body editable" contenteditable="false" data-field="alt-body">Salário, cargo e área/departamento. As alterações devem ser informadas até o dia 20 do mês anterior à mudança, para que tenham impacto já no início da competência — importante especialmente em casos de férias e adiantamentos.</p>
+      <p style="margin-top:12px; font-size:12px; font-weight:300; opacity:.75; line-height:1.6;" class="editable" contenteditable="false" data-field="alt-example"><strong>Exemplo:</strong> solicitação feita até 20/03 → impacto na folha de abril (paga em maio).</p>
+    </div>
+
+  </div>
+</div>
+
+<!-- EDIT BAR -->
+<div class="edit-bar">✎ &nbsp;Modo edição ativo — clique em qualquer texto para editar · <a href="#" onclick="exitEdit()" style="color:#C9ADED; text-decoration:underline;">Sair do modo edição</a></div>
+
+<!-- PASSWORD MODAL -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal()">✕</button>
+    <h3>Modo Edição</h3>
+    <p>Digite a senha para habilitar a edição dos prazos e textos.</p>
+    <input type="password" id="pwdInput" placeholder="••••••••" onkeydown="if(event.key==='Enter') confirmPwd()" />
+    <p class="modal-error" id="modalError">Senha incorreta. Tente novamente.</p>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal()">Cancelar</button>
+      <button class="btn-confirm" onclick="confirmPwd()">Entrar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const SENHA = "admin123";
+
+const MONTHS_FULL = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+let editMode = false;
+
+const MONTHS = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+const today = new Date();
+let selectedMonth = today.getMonth(); // sempre inicia no mês atual
+let selectedYear  = today.getFullYear();
+
+function getMonthNums(mi, yi){
+  const prevMonth = (mi === 0) ? 11 : mi - 1;
+  const prevYear  = (mi === 0) ? yi - 1 : yi;
+  return {
+    curMM:  String(mi + 1).padStart(2, '0'),
+    prevMM: String(prevMonth + 1).padStart(2, '0'),
+    prevYear
+  };
+}
+
+// Build month strip
+const strip = document.getElementById('monthStrip');
+MONTHS.forEach((m, i) => {
+  const b = document.createElement('button');
+  b.className = 'month-btn' + (i === selectedMonth ? ' active' : '');
+  b.textContent = m;
+  b.onclick = () => {
+    selectedMonth = i;
+    strip.querySelectorAll('.month-btn').forEach((btn, j) => btn.classList.toggle('active', j === i));
+    renderBadges();
+  };
+  strip.appendChild(b);
+});
+// scroll active month into view
+setTimeout(() => {
+  const activeBtn = strip.querySelector('.month-btn.active');
+  if (activeBtn) activeBtn.scrollIntoView({ inline: 'center', block: 'nearest' });
+}, 50);
+
+function getDay(field){ return parseInt(document.querySelector(`[data-field="${field}"]`).textContent) || 0; }
+
+// Deadline defs: prevMonth=true means badge shows previous month
+const DEADLINE_DEFS = [
+  { field:'alt-day',   label:'Alterações Contratuais', color:'#5C2080', bg:'#CCAAEE', prevMonth: true  },
+  { field:'folha-day', label:'Bônus / Comissões',       color:'#4A1A7A', bg:'#C9ADED', prevMonth: false },
+  { field:'des-day',   label:'Desligamentos',            color:'#7A1E6A', bg:'#DFA8D6', prevMonth: false },
+  { field:'adm-day',   label:'Admissões',                color:'#2E1060', bg:'#B3A0E0', prevMonth: false },
+];
+
+function renderBadges(){
+  const { curMM, prevMM, prevYear } = getMonthNums(selectedMonth, selectedYear);
+  const badgesEl = document.getElementById('deadlineBadges');
+  badgesEl.innerHTML = '';
+  DEADLINE_DEFS.forEach(dl => {
+    const day = getDay(dl.field);
+    const mm  = dl.prevMonth ? prevMM : curMM;
+    const yr  = dl.prevMonth ? prevYear : selectedYear;
+    const badge = document.createElement('div');
+    badge.className = 'badge';
+    badge.style.cssText = `background:${dl.bg}22; color:${dl.color}; border-color:${dl.bg};`;
+    badge.innerHTML = `
+      <span class="badge-dot" style="background:${dl.color}"></span>
+      <span class="badge-day">${String(day).padStart(2,'0')}/${mm}</span>
+      <span style="font-size:11px; font-weight:500">${dl.label}</span>
+      ${dl.prevMonth ? `<span class="badge-prev-tag">mês anterior</span>` : ''}
+    `;
+    badgesEl.appendChild(badge);
+  });
+}
+
+renderBadges();
+
+// ── MODAL ──
+function openModal(){ if(editMode){ exitEdit(); return; } document.getElementById('modalOverlay').classList.add('open'); document.getElementById('pwdInput').value=''; document.getElementById('modalError').style.display='none'; setTimeout(()=>document.getElementById('pwdInput').focus(),100); }
+function closeModal(){ document.getElementById('modalOverlay').classList.remove('open'); }
+function confirmPwd(){ const v=document.getElementById('pwdInput').value; if(v===SENHA){ closeModal(); enterEdit(); } else { document.getElementById('modalError').style.display='block'; document.getElementById('pwdInput').value=''; document.getElementById('pwdInput').focus(); } }
+document.getElementById('modalOverlay').addEventListener('click', e=>{ if(e.target===e.currentTarget) closeModal(); });
+
+// ── EDIT MODE ──
+function enterEdit(){
+  editMode=true; document.body.classList.add('edit-mode');
+  document.querySelectorAll('.editable').forEach(el=>el.setAttribute('contenteditable','true'));
+  const btn=document.getElementById('editBtn');
+  btn.classList.add('active');
+  btn.innerHTML=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Editando`;
+  document.querySelectorAll('[data-field$="-day"]').forEach(el=>{ el.addEventListener('input', debounce(renderBadges, 400)); });
+}
+function exitEdit(){
+  editMode=false; document.body.classList.remove('edit-mode');
+  document.querySelectorAll('.editable').forEach(el=>el.setAttribute('contenteditable','false'));
+  const btn=document.getElementById('editBtn');
+  btn.classList.remove('active');
+  btn.innerHTML=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg> Editar`;
+  renderBadges();
+}
+function debounce(fn,ms){ let t; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>fn(...a),ms); }; }
+</script>
+</body>
+</html>
