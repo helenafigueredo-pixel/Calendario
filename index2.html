@@ -1,0 +1,872 @@
+<html lang="pt-BR"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Compensação Inteligente — Editável</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&amp;family=Syne:wght@700;800&amp;display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#0D0B14; --card:rgba(255,255,255,0.03); --border:rgba(255,255,255,0.07);
+  --purple:#A87FFF; --red:#FF6B6B; --yellow:#FFD93D; --green:#6BCB77; --blue:#4D96FF;
+  --text:#F0EBF8; --muted:rgba(255,255,255,0.4);
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);background-image:radial-gradient(ellipse at 20% 20%,rgba(120,60,180,.15) 0%,transparent 60%),radial-gradient(ellipse at 80% 80%,rgba(50,100,200,.1) 0%,transparent 60%);font-family:'DM Sans',sans-serif;color:var(--text);min-height:100vh;padding:32px 20px;}
+.wrapper{max-width:1140px;margin:0 auto;}
+.header{display:flex;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;gap:16px;margin-bottom:28px;}
+.header-label{font-size:11px;letter-spacing:4px;color:rgba(255,255,255,.35);margin-bottom:6px;font-weight:500;}
+.header h1{font-family:'Syne',sans-serif;font-weight:800;font-size:clamp(24px,4vw,44px);line-height:1.1;}
+.accent{color:var(--purple);}
+.header-right{display:flex;flex-direction:column;align-items:flex-end;gap:10px;}
+.year-ctrl{display:flex;align-items:center;gap:10px;}
+.year-btn{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);color:var(--text);font-size:16px;width:32px;height:32px;border-radius:8px;cursor:pointer;transition:all .15s;}
+.year-btn:hover{background:rgba(255,255,255,.12);}
+.year-display{font-family:'Syne',sans-serif;font-size:22px;font-weight:800;color:var(--purple);min-width:60px;text-align:center;}
+.edit-toggle{padding:8px 16px;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;transition:all .2s;font-family:'DM Sans',sans-serif;background:rgba(168,127,255,.12);color:var(--purple);border:1px solid rgba(168,127,255,.3);}
+.edit-toggle:hover{background:rgba(168,127,255,.2);}
+.edit-toggle.active{background:var(--purple);color:#fff;border-color:var(--purple);}
+.filters{display:flex;gap:8px;flex-wrap:wrap;}
+.filter-btn{padding:7px 14px;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;transition:all .2s;font-family:'DM Sans',sans-serif;background:rgba(255,255,255,.05);color:rgba(255,255,255,.5);border:1px solid rgba(255,255,255,.08);}
+.filter-btn.active{background:var(--purple);color:#fff;border-color:var(--purple);}
+.filter-btn:hover:not(.active){background:rgba(255,255,255,.08);color:rgba(255,255,255,.7);}
+.layout{display:grid;grid-template-columns:1fr 320px;gap:24px;align-items:start;}
+@media(max-width:860px){.layout{grid-template-columns:1fr;}}
+.cal-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:14px;}
+.month-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:18px;}
+.month-title{font-size:14px;font-weight:600;color:#E8E0F0;letter-spacing:1px;margin-bottom:14px;}
+.days-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;}
+.day-hdr{text-align:center;font-size:9px;color:rgba(255,255,255,.3);padding-bottom:5px;}
+.day{text-align:center;font-size:11px;padding:4px 2px;border-radius:6px;border:1px solid transparent;transition:all .15s;position:relative;user-select:none;color:rgba(255,255,255,.65);}
+.day.wknd{color:rgba(255,255,255,.25);}
+.day.hol{color:var(--red);background:rgba(255,107,107,.08);}
+.day.sug{cursor:pointer;font-weight:700;}
+.day.sug:hover{filter:brightness(1.2);}
+.day.sel{border-color:rgba(255,255,255,.5)!important;background:rgba(255,255,255,.1)!important;}
+.day.emode:hover{background:rgba(168,127,255,.15)!important;border-color:rgba(168,127,255,.4)!important;cursor:pointer;}
+.dot{width:4px;height:4px;border-radius:50%;margin:1px auto 0;}
+.legend{display:flex;gap:18px;margin-top:18px;flex-wrap:wrap;}
+.legend-item{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--muted);}
+.ldot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.sidebar{display:flex;flex-direction:column;gap:14px;}
+.side-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:20px;}
+.side-lbl{font-size:11px;letter-spacing:3px;color:rgba(255,255,255,.3);margin-bottom:14px;}
+.detail-card{background:rgba(168,127,255,.08);border:1px solid rgba(168,127,255,.25);border-radius:16px;padding:20px;display:none;animation:fadeIn .2s ease;}
+.detail-card.vis{display:block;}
+.uitem{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:10px;cursor:pointer;transition:all .15s;border:1px solid transparent;margin-bottom:8px;}
+.uitem:hover{filter:brightness(1.15);}
+.srow{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
+.sdiv{border:none;border-top:1px solid rgba(255,255,255,.06);margin:10px 0;}
+.edit-panel{display:none;background:rgba(168,127,255,.06);border:1px solid rgba(168,127,255,.2);border-radius:16px;padding:20px;margin-bottom:20px;animation:fadeIn .2s ease;}
+.edit-panel.vis{display:block;}
+.edit-panel h3{font-family:'Syne',sans-serif;font-size:16px;color:var(--purple);margin-bottom:16px;}
+.etabs{display:flex;gap:6px;margin-bottom:18px;flex-wrap:wrap;}
+.etab{padding:6px 14px;border-radius:12px;font-size:12px;font-weight:600;cursor:pointer;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.04);color:rgba(255,255,255,.45);transition:all .15s;}
+.etab.active{background:rgba(168,127,255,.2);border-color:var(--purple);color:var(--purple);}
+.esec{display:none;}
+.esec.vis{display:block;}
+.frow{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;}
+.frow.one{grid-template-columns:1fr;}
+label{font-size:11px;color:rgba(255,255,255,.4);display:block;margin-bottom:4px;letter-spacing:1px;}
+input,select,textarea{width:100%;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:8px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;padding:8px 11px;outline:none;transition:border .15s;}
+input:focus,select:focus,textarea:focus{border-color:rgba(168,127,255,.5);}
+textarea{resize:vertical;min-height:60px;}
+select option{background:#1a1525;}
+.btn{padding:9px 18px;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .2s;border:none;}
+.btn-p{background:var(--purple);color:#fff;}
+.btn-p:hover{background:#9a6fee;}
+.btn-g{background:rgba(255,255,255,.06);color:rgba(255,255,255,.6);border:1px solid rgba(255,255,255,.08);}
+.btn-g:hover{background:rgba(255,255,255,.1);}
+.brow{display:flex;gap:8px;margin-top:12px;}
+.elist{display:flex;flex-direction:column;gap:6px;max-height:260px;overflow-y:auto;margin-bottom:12px;padding-right:4px;}
+.elist::-webkit-scrollbar{width:4px;} .elist::-webkit-scrollbar-thumb{background:rgba(255,255,255,.1);border-radius:2px;}
+.eitem{display:flex;align-items:center;gap:10px;padding:9px 12px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:10px;}
+.eitem-info{flex:1;min-width:0;}
+.eitem-title{font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.eitem-sub{font-size:11px;color:rgba(255,255,255,.35);}
+.ibtns{display:flex;gap:5px;flex-shrink:0;}
+.ibtn{width:28px;height:28px;border-radius:7px;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:13px;transition:all .15s;}
+.ibtn.e{background:rgba(168,127,255,.12);} .ibtn.e:hover{background:rgba(168,127,255,.25);}
+.ibtn.d{background:rgba(255,107,107,.1);} .ibtn.d:hover{background:rgba(255,107,107,.22);}
+.hint{font-size:11px;color:rgba(255,255,255,.3);margin-top:6px;font-style:italic;}
+.save-bar{display:none;position:fixed;bottom:24px;right:24px;background:var(--purple);color:#fff;padding:12px 22px;border-radius:14px;font-size:13px;font-weight:600;cursor:pointer;box-shadow:0 8px 32px rgba(168,127,255,.4);z-index:100;align-items:center;gap:8px;}
+.save-bar.vis{display:flex;}
+.toast{position:fixed;bottom:80px;right:24px;background:#1e1a2e;border:1px solid rgba(168,127,255,.3);color:var(--text);padding:10px 18px;border-radius:10px;font-size:13px;z-index:200;display:none;}
+.toast.vis{display:block;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(-4px);}to{opacity:1;transform:translateY(0);}}
+/* Modal de senha */
+.pwd-overlay{position:fixed;inset:0;background:rgba(0,0,0,.65);backdrop-filter:blur(6px);z-index:500;display:none;align-items:center;justify-content:center;}
+.pwd-overlay.vis{display:flex;}
+.pwd-box{background:#1a1525;border:1px solid rgba(168,127,255,.35);border-radius:20px;padding:32px 28px;width:320px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.5);}
+.pwd-box h2{font-family:'Syne',sans-serif;font-size:20px;color:var(--purple);margin-bottom:6px;}
+.pwd-box p{font-size:12px;color:rgba(255,255,255,.4);margin-bottom:20px;}
+.pwd-box input{width:100%;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:10px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:15px;padding:10px 14px;outline:none;text-align:center;letter-spacing:3px;margin-bottom:14px;}
+.pwd-box input:focus{border-color:rgba(168,127,255,.55);}
+.pwd-err{font-size:12px;color:var(--red);min-height:18px;margin-bottom:10px;}
+.pwd-btns{display:flex;gap:10px;}
+.pwd-btns button{flex:1;padding:10px;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;border:none;}
+.pwd-confirm{background:var(--purple);color:#fff;}
+.pwd-confirm:hover{background:#9a6fee;}
+.pwd-cancel{background:rgba(255,255,255,.06);color:rgba(255,255,255,.5);border:1px solid rgba(255,255,255,.08)!important;}
+</style>
+</head>
+<body>
+<div class="wrapper">
+
+<!-- HEADER -->
+<div class="header">
+  <div>
+    <div class="header-label">GESTÃO DE HORAS</div>
+    <h1>Compensação<br><span class="accent">Inteligente</span> <span class="accent" id="yearTitle">2026</span></h1>
+  </div>
+  <div class="header-right">
+    <div class="year-ctrl">
+      <button class="year-btn" onclick="changeYear(-1)">‹</button>
+      <div class="year-display" id="yearDisplay">2026</div>
+      <button class="year-btn" onclick="changeYear(1)">›</button>
+    </div>
+    <button class="edit-toggle" id="editToggle" onclick="toggleEdit()">✏️ Editar Calendario</button>
+    <div class="filters" id="filters">
+      <button class="filter-btn active" data-filter="all">Todos</button>
+      <button class="filter-btn" data-filter="emenda">Emendas</button>
+      <button class="filter-btn" data-filter="saida-cedo">Saida Cedo</button>
+      <button class="filter-btn" data-filter="entrada-tarde">Entrada Tarde</button>
+      <button class="filter-btn" data-filter="folga">Folgas</button>
+    </div>
+  </div>
+</div>
+
+<!-- EDIT PANEL -->
+<div class="edit-panel" id="editPanel">
+  <h3>Gerenciar Calendario</h3>
+  <div class="etabs">
+    <div class="etab active" data-tab="suggestions" onclick="switchTab('suggestions')">Sugestoes</div>
+    <div class="etab" data-tab="holidays" onclick="switchTab('holidays')">Feriados</div>
+    <div class="etab" data-tab="notes" onclick="switchTab('notes')">Bloco de Notas</div>
+  </div>
+
+  <!-- SUGESTOES -->
+  <div class="esec vis" id="tab-suggestions">
+    <div class="elist" id="suggestionList"><div class="eitem"><span style="font-size:16px">🌅</span><div class="eitem-info"><div class="eitem-title" style="color:#FFD93D">Sexta antecipada</div><div class="eitem-sub">13/03/2026</div></div><div class="ibtns"><button class="ibtn e" onclick="startEditSuggestion('2026-03-13')">✏️</button><button class="ibtn d" onclick="delSuggestion('2026-03-13')">🗑️</button></div></div><div class="eitem"><span style="font-size:16px">🌅</span><div class="eitem-info"><div class="eitem-title" style="color:#FFD93D">Sexta antecipada</div><div class="eitem-sub">20/03/2026</div></div><div class="ibtns"><button class="ibtn e" onclick="startEditSuggestion('2026-03-20')">✏️</button><button class="ibtn d" onclick="delSuggestion('2026-03-20')">🗑️</button></div></div><div class="eitem"><span style="font-size:16px">🌅</span><div class="eitem-info"><div class="eitem-title" style="color:#FFD93D">Sexta antecipada</div><div class="eitem-sub">02/04/2026</div></div><div class="ibtns"><button class="ibtn e" onclick="startEditSuggestion('2026-04-02')">✏️</button><button class="ibtn d" onclick="delSuggestion('2026-04-02')">🗑️</button></div></div><div class="eitem"><span style="font-size:16px">🔗</span><div class="eitem-info"><div class="eitem-title" style="color:#FF6B6B">Estender o feriado de Páscoa</div><div class="eitem-sub">06/04/2026</div></div><div class="ibtns"><button class="ibtn e" onclick="startEditSuggestion('2026-04-06')">✏️</button><button class="ibtn d" onclick="delSuggestion('2026-04-06')">🗑️</button></div></div><div class="eitem"><span style="font-size:16px">🔗</span><div class="eitem-info"><div class="eitem-title" style="color:#FF6B6B">Emenda Tiradentes</div><div class="eitem-sub">20/04/2026</div></div><div class="ibtns"><button class="ibtn e" onclick="startEditSuggestion('2026-04-20')">✏️</button><button class="ibtn d" onclick="delSuggestion('2026-04-20')">🗑️</button></div></div><div class="eitem"><span style="font-size:16px">🌅</span><div class="eitem-info"><div class="eitem-title" style="color:#FFD93D">Sexta antecipada</div><div class="eitem-sub">30/04/2026</div></div><div class="ibtns"><button class="ibtn e" onclick="startEditSuggestion('2026-04-30')">✏️</button><button class="ibtn d" onclick="delSuggestion('2026-04-30')">🗑️</button></div></div><div class="eitem"><span style="font-size:16px">🌅</span><div class="eitem-info"><div class="eitem-title" style="color:#FFD93D">Sexta antecipada</div><div class="eitem-sub">29/05/2026</div></div><div class="ibtns"><button class="ibtn e" onclick="startEditSuggestion('2026-05-29')">✏️</button><button class="ibtn d" onclick="delSuggestion('2026-05-29')">🗑️</button></div></div><div class="eitem"><span style="font-size:16px">🔗</span><div class="eitem-info"><div class="eitem-title" style="color:#FF6B6B">Emenda Corpus Christi</div><div class="eitem-sub">05/06/2026</div></div><div class="ibtns"><button class="ibtn e" onclick="startEditSuggestion('2026-06-05')">✏️</button><button class="ibtn d" onclick="delSuggestion('2026-06-05')">🗑️</button></div></div><div class="eitem"><span style="font-size:16px">☕</span><div class="eitem-info"><div class="eitem-title" style="color:#6BCB77">Segunda leve</div><div class="eitem-sub">08/06/2026</div></div><div class="ibtns"><button class="ibtn e" onclick="startEditSuggestion('2026-06-08')">✏️</button><button class="ibtn d" onclick="delSuggestion('2026-06-08')">🗑️</button></div></div><div class="eitem"><span style="font-size:16px">🌅</span><div class="eitem-info"><div class="eitem-title" style="color:#FFD93D">Dia dos namorados</div><div class="eitem-sub">12/06/2026</div></div><div class="ibtns"><button class="ibtn e" onclick="startEditSuggestion('2026-06-12')">✏️</button><button class="ibtn d" onclick="delSuggestion('2026-06-12')">🗑️</button></div></div><div class="eitem"><span style="font-size:16px">🌅</span><div class="eitem-info"><div class="eitem-title" style="color:#FFD93D">Copa do mundo</div><div class="eitem-sub">15/06/2026</div></div><div class="ibtns"><button class="ibtn e" onclick="startEditSuggestion('2026-06-15')">✏️</button><button class="ibtn d" onclick="delSuggestion('2026-06-15')">🗑️</button></div></div><div class="eitem"><span style="font-size:16px">🌅</span><div class="eitem-info"><div class="eitem-title" style="color:#FFD93D">Copa do mundo</div><div class="eitem-sub">16/06/2026</div></div><div class="ibtns"><button class="ibtn e" onclick="startEditSuggestion('2026-06-16')">✏️</button><button class="ibtn d" onclick="delSuggestion('2026-06-16')">🗑️</button></div></div><div class="eitem"><span style="font-size:16px">🌅</span><div class="eitem-info"><div class="eitem-title" style="color:#FFD93D">Copa do mundo</div><div class="eitem-sub">17/06/2026</div></div><div class="ibtns"><button class="ibtn e" onclick="startEditSuggestion('2026-06-17')">✏️</button><button class="ibtn d" onclick="delSuggestion('2026-06-17')">🗑️</button></div></div><div class="eitem"><span style="font-size:16px">🌅</span><div class="eitem-info"><div class="eitem-title" style="color:#FFD93D">Copa do mundo</div><div class="eitem-sub">18/06/2026</div></div><div class="ibtns"><button class="ibtn e" onclick="startEditSuggestion('2026-06-18')">✏️</button><button class="ibtn d" onclick="delSuggestion('2026-06-18')">🗑️</button></div></div><div class="eitem"><span style="font-size:16px">🌅</span><div class="eitem-info"><div class="eitem-title" style="color:#FFD93D">Copa do mundo</div><div class="eitem-sub">19/06/2026</div></div><div class="ibtns"><button class="ibtn e" onclick="startEditSuggestion('2026-06-19')">✏️</button><button class="ibtn d" onclick="delSuggestion('2026-06-19')">🗑️</button></div></div><div class="eitem"><span style="font-size:16px">🌅</span><div class="eitem-info"><div class="eitem-title" style="color:#FFD93D">Copa do mundo</div><div class="eitem-sub">22/06/2026</div></div><div class="ibtns"><button class="ibtn e" onclick="startEditSuggestion('2026-06-22')">✏️</button><button class="ibtn d" onclick="delSuggestion('2026-06-22')">🗑️</button></div></div><div class="eitem"><span style="font-size:16px">🌅</span><div class="eitem-info"><div class="eitem-title" style="color:#FFD93D">Copa do mundo</div><div class="eitem-sub">23/06/2026</div></div><div class="ibtns"><button class="ibtn e" onclick="startEditSuggestion('2026-06-23')">✏️</button><button class="ibtn d" onclick="delSuggestion('2026-06-23')">🗑️</button></div></div><div class="eitem"><span style="font-size:16px">🌅</span><div class="eitem-info"><div class="eitem-title" style="color:#FFD93D">Copa do mundo</div><div class="eitem-sub">24/06/2026</div></div><div class="ibtns"><button class="ibtn e" onclick="startEditSuggestion('2026-06-24')">✏️</button><button class="ibtn d" onclick="delSuggestion('2026-06-24')">🗑️</button></div></div><div class="eitem"><span style="font-size:16px">🌅</span><div class="eitem-info"><div class="eitem-title" style="color:#FFD93D">Copa do mundo</div><div class="eitem-sub">25/06/2026</div></div><div class="ibtns"><button class="ibtn e" onclick="startEditSuggestion('2026-06-25')">✏️</button><button class="ibtn d" onclick="delSuggestion('2026-06-25')">🗑️</button></div></div><div class="eitem"><span style="font-size:16px">🌅</span><div class="eitem-info"><div class="eitem-title" style="color:#FFD93D">Copa do mundo</div><div class="eitem-sub">26/06/2026</div></div><div class="ibtns"><button class="ibtn e" onclick="startEditSuggestion('2026-06-26')">✏️</button><button class="ibtn d" onclick="delSuggestion('2026-06-26')">🗑️</button></div></div><div class="eitem"><span style="font-size:16px">🌅</span><div class="eitem-info"><div class="eitem-title" style="color:#FFD93D">Copa do mundo</div><div class="eitem-sub">29/06/2026</div></div><div class="ibtns"><button class="ibtn e" onclick="startEditSuggestion('2026-06-29')">✏️</button><button class="ibtn d" onclick="delSuggestion('2026-06-29')">🗑️</button></div></div><div class="eitem"><span style="font-size:16px">🌅</span><div class="eitem-info"><div class="eitem-title" style="color:#FFD93D">Copa do mundo</div><div class="eitem-sub">30/06/2026</div></div><div class="ibtns"><button class="ibtn e" onclick="startEditSuggestion('2026-06-30')">✏️</button><button class="ibtn d" onclick="delSuggestion('2026-06-30')">🗑️</button></div></div><div class="eitem"><span style="font-size:16px">🌅</span><div class="eitem-info"><div class="eitem-title" style="color:#FFD93D">Copa do mundo</div><div class="eitem-sub">01/07/2026</div></div><div class="ibtns"><button class="ibtn e" onclick="startEditSuggestion('2026-07-01')">✏️</button><button class="ibtn d" onclick="delSuggestion('2026-07-01')">🗑️</button></div></div><div class="eitem"><span style="font-size:16px">🌅</span><div class="eitem-info"><div class="eitem-title" style="color:#FFD93D">Copa do mundo</div><div class="eitem-sub">02/07/2026</div></div><div class="ibtns"><button class="ibtn e" onclick="startEditSuggestion('2026-07-02')">✏️</button><button class="ibtn d" onclick="delSuggestion('2026-07-02')">🗑️</button></div></div><div class="eitem"><span style="font-size:16px">🌅</span><div class="eitem-info"><div class="eitem-title" style="color:#FFD93D">Copa do mundo</div><div class="eitem-sub">03/07/2026</div></div><div class="ibtns"><button class="ibtn e" onclick="startEditSuggestion('2026-07-03')">✏️</button><button class="ibtn d" onclick="delSuggestion('2026-07-03')">🗑️</button></div></div><div class="eitem"><span style="font-size:16px">🌅</span><div class="eitem-info"><div class="eitem-title" style="color:#FFD93D">Sexta de julho</div><div class="eitem-sub">31/07/2026</div></div><div class="ibtns"><button class="ibtn e" onclick="startEditSuggestion('2026-07-31')">✏️</button><button class="ibtn d" onclick="delSuggestion('2026-07-31')">🗑️</button></div></div><div class="eitem"><span style="font-size:16px">☕</span><div class="eitem-info"><div class="eitem-title" style="color:#6BCB77">Segunda de agosto</div><div class="eitem-sub">03/08/2026</div></div><div class="ibtns"><button class="ibtn e" onclick="startEditSuggestion('2026-08-03')">✏️</button><button class="ibtn d" onclick="delSuggestion('2026-08-03')">🗑️</button></div></div><div class="eitem"><span style="font-size:16px">🔗</span><div class="eitem-info"><div class="eitem-title" style="color:#FF6B6B">Feriado antecipado</div><div class="eitem-sub">04/09/2026</div></div><div class="ibtns"><button class="ibtn e" onclick="startEditSuggestion('2026-09-04')">✏️</button><button class="ibtn d" onclick="delSuggestion('2026-09-04')">🗑️</button></div></div><div class="eitem"><span style="font-size:16px">🔗</span><div class="eitem-info"><div class="eitem-title" style="color:#FF6B6B">Emenda Aparecida</div><div class="eitem-sub">09/10/2026</div></div><div class="ibtns"><button class="ibtn e" onclick="startEditSuggestion('2026-10-09')">✏️</button><button class="ibtn d" onclick="delSuggestion('2026-10-09')">🗑️</button></div></div><div class="eitem"><span style="font-size:16px">🌅</span><div class="eitem-info"><div class="eitem-title" style="color:#FFD93D">Saida as 14h</div><div class="eitem-sub">19/11/2026</div></div><div class="ibtns"><button class="ibtn e" onclick="startEditSuggestion('2026-11-19')">✏️</button><button class="ibtn d" onclick="delSuggestion('2026-11-19')">🗑️</button></div></div><div class="eitem"><span style="font-size:16px">🌅</span><div class="eitem-info"><div class="eitem-title" style="color:#FFD93D">Saida ao meio-dia</div><div class="eitem-sub">24/12/2026</div></div><div class="ibtns"><button class="ibtn e" onclick="startEditSuggestion('2026-12-24')">✏️</button><button class="ibtn d" onclick="delSuggestion('2026-12-24')">🗑️</button></div></div><div class="eitem"><span style="font-size:16px">🎉</span><div class="eitem-info"><div class="eitem-title" style="color:#4D96FF">Folga Vespera de Ano Novo</div><div class="eitem-sub">31/12/2026</div></div><div class="ibtns"><button class="ibtn e" onclick="startEditSuggestion('2026-12-31')">✏️</button><button class="ibtn d" onclick="delSuggestion('2026-12-31')">🗑️</button></div></div></div>
+    <div style="border-top:1px solid rgba(255,255,255,.06);padding-top:14px">
+      <div style="font-size:12px;color:rgba(255,255,255,.5);margin-bottom:10px" id="sFormTitle">Nova Sugestao</div>
+      <div class="frow">
+        <div><label>DATA</label><input type="date" id="sDate"></div>
+        <div><label>TIPO</label>
+          <select id="sType">
+            <option value="emenda">Emenda</option>
+            <option value="saida-cedo">Saida Cedo</option>
+            <option value="entrada-tarde">Entrada Tarde</option>
+            <option value="folga">Folga</option>
+          </select>
+        </div>
+      </div>
+      <div class="frow one"><div><label>TITULO</label><input type="text" id="sLabel" placeholder="Ex: Emenda Tiradentes"></div></div>
+      <div class="frow one"><div><label>DESCRICAO</label><textarea id="sDesc" placeholder="Ex: Emenda com Tiradentes - feriado terca, folga segunda."></textarea></div></div>
+      <div class="brow">
+        <button class="btn btn-p" onclick="saveSuggestion()">Salvar</button>
+        <button class="btn btn-g" onclick="clearSuggestionForm()" id="cancelSBtn" style="display: none;">Cancelar</button>
+      </div>
+      <p class="hint" id="sHint" style="display: block;">Clique em qualquer dia do calendario para pre-preencher a data.</p>
+    </div>
+  </div>
+
+  <!-- FERIADOS -->
+  <div class="esec" id="tab-holidays">
+    <div class="elist" id="holidayList"><div class="eitem"><span style="font-size:16px">🎌</span><div class="eitem-info"><div class="eitem-title" style="color:var(--red)">Ano Novo</div><div class="eitem-sub">01/01/2026</div></div><div class="ibtns"><button class="ibtn e" onclick="startEditHoliday('2026-01-01')">✏️</button><button class="ibtn d" onclick="delHoliday('2026-01-01')">🗑️</button></div></div><div class="eitem"><span style="font-size:16px">🎌</span><div class="eitem-info"><div class="eitem-title" style="color:var(--red)">Carnaval</div><div class="eitem-sub">17/02/2026</div></div><div class="ibtns"><button class="ibtn e" onclick="startEditHoliday('2026-02-17')">✏️</button><button class="ibtn d" onclick="delHoliday('2026-02-17')">🗑️</button></div></div><div class="eitem"><span style="font-size:16px">🎌</span><div class="eitem-info"><div class="eitem-title" style="color:var(--red)">Sexta-Feira Santa</div><div class="eitem-sub">03/04/2026</div></div><div class="ibtns"><button class="ibtn e" onclick="startEditHoliday('2026-04-03')">✏️</button><button class="ibtn d" onclick="delHoliday('2026-04-03')">🗑️</button></div></div><div class="eitem"><span style="font-size:16px">🎌</span><div class="eitem-info"><div class="eitem-title" style="color:var(--red)">Pascoa</div><div class="eitem-sub">05/04/2026</div></div><div class="ibtns"><button class="ibtn e" onclick="startEditHoliday('2026-04-05')">✏️</button><button class="ibtn d" onclick="delHoliday('2026-04-05')">🗑️</button></div></div><div class="eitem"><span style="font-size:16px">🎌</span><div class="eitem-info"><div class="eitem-title" style="color:var(--red)">Tiradentes</div><div class="eitem-sub">21/04/2026</div></div><div class="ibtns"><button class="ibtn e" onclick="startEditHoliday('2026-04-21')">✏️</button><button class="ibtn d" onclick="delHoliday('2026-04-21')">🗑️</button></div></div><div class="eitem"><span style="font-size:16px">🎌</span><div class="eitem-info"><div class="eitem-title" style="color:var(--red)">Dia do Trabalho</div><div class="eitem-sub">01/05/2026</div></div><div class="ibtns"><button class="ibtn e" onclick="startEditHoliday('2026-05-01')">✏️</button><button class="ibtn d" onclick="delHoliday('2026-05-01')">🗑️</button></div></div><div class="eitem"><span style="font-size:16px">🎌</span><div class="eitem-info"><div class="eitem-title" style="color:var(--red)">Corpus Christi</div><div class="eitem-sub">04/06/2026</div></div><div class="ibtns"><button class="ibtn e" onclick="startEditHoliday('2026-06-04')">✏️</button><button class="ibtn d" onclick="delHoliday('2026-06-04')">🗑️</button></div></div><div class="eitem"><span style="font-size:16px">🎌</span><div class="eitem-info"><div class="eitem-title" style="color:var(--red)">Independencia</div><div class="eitem-sub">07/09/2026</div></div><div class="ibtns"><button class="ibtn e" onclick="startEditHoliday('2026-09-07')">✏️</button><button class="ibtn d" onclick="delHoliday('2026-09-07')">🗑️</button></div></div><div class="eitem"><span style="font-size:16px">🎌</span><div class="eitem-info"><div class="eitem-title" style="color:var(--red)">Nossa Sra. Aparecida</div><div class="eitem-sub">12/10/2026</div></div><div class="ibtns"><button class="ibtn e" onclick="startEditHoliday('2026-10-12')">✏️</button><button class="ibtn d" onclick="delHoliday('2026-10-12')">🗑️</button></div></div><div class="eitem"><span style="font-size:16px">🎌</span><div class="eitem-info"><div class="eitem-title" style="color:var(--red)">Finados</div><div class="eitem-sub">02/11/2026</div></div><div class="ibtns"><button class="ibtn e" onclick="startEditHoliday('2026-11-02')">✏️</button><button class="ibtn d" onclick="delHoliday('2026-11-02')">🗑️</button></div></div><div class="eitem"><span style="font-size:16px">🎌</span><div class="eitem-info"><div class="eitem-title" style="color:var(--red)">Proclamacao da Republica</div><div class="eitem-sub">15/11/2026</div></div><div class="ibtns"><button class="ibtn e" onclick="startEditHoliday('2026-11-15')">✏️</button><button class="ibtn d" onclick="delHoliday('2026-11-15')">🗑️</button></div></div><div class="eitem"><span style="font-size:16px">🎌</span><div class="eitem-info"><div class="eitem-title" style="color:var(--red)">Consciencia Negra</div><div class="eitem-sub">20/11/2026</div></div><div class="ibtns"><button class="ibtn e" onclick="startEditHoliday('2026-11-20')">✏️</button><button class="ibtn d" onclick="delHoliday('2026-11-20')">🗑️</button></div></div><div class="eitem"><span style="font-size:16px">🎌</span><div class="eitem-info"><div class="eitem-title" style="color:var(--red)">Natal</div><div class="eitem-sub">25/12/2026</div></div><div class="ibtns"><button class="ibtn e" onclick="startEditHoliday('2026-12-25')">✏️</button><button class="ibtn d" onclick="delHoliday('2026-12-25')">🗑️</button></div></div></div>
+    <div style="border-top:1px solid rgba(255,255,255,.06);padding-top:14px">
+      <div style="font-size:12px;color:rgba(255,255,255,.5);margin-bottom:10px" id="hFormTitle">Novo Feriado</div>
+      <div class="frow">
+        <div><label>DATA</label><input type="date" id="hDate"></div>
+        <div><label>NOME DO FERIADO</label><input type="text" id="hName" placeholder="Ex: Aniversario da Cidade"></div>
+      </div>
+      <div class="brow">
+        <button class="btn btn-p" onclick="saveHoliday()">Salvar</button>
+        <button class="btn btn-g" onclick="clearHolidayForm()" id="cancelHBtn" style="display:none">Cancelar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- BLOCO DE NOTAS -->
+  <div class="esec" id="tab-notes">
+    <div style="font-size:12px;color:rgba(255,255,255,.4);margin-bottom:12px;line-height:1.6">
+      Anote ideias gerais de compensacao sem data fixa: politicas internas, boas praticas, lembretes para o RH, etc.
+    </div>
+    <div id="notesList" style="display:flex;flex-direction:column;gap:10px;margin-bottom:14px"><div style="padding:12px;background:rgba(168,127,255,.10);border:1px solid rgba(168,127,255,.25);border-radius:12px"><div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:6px"><div style="display:flex;align-items:center;gap:7px;font-size:13px;font-weight:600;color:#A87FFF">💡 Férias estendidas</div><div class="ibtns" style="flex-shrink:0"><button class="ibtn e" onclick="startEditNote(0)">✏️</button><button class="ibtn d" onclick="delNote(0)">🗑️</button></div></div><div style="font-size:12px;color:rgba(255,255,255,.55);line-height:1.65;white-space:pre-wrap">Utilizar horas do banco para ganhar mais dias de férias</div></div><div style="padding:12px;background:rgba(168,127,255,.10);border:1px solid rgba(168,127,255,.25);border-radius:12px"><div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:6px"><div style="display:flex;align-items:center;gap:7px;font-size:13px;font-weight:600;color:#A87FFF">💡 Aniversários</div><div class="ibtns" style="flex-shrink:0"><button class="ibtn e" onclick="startEditNote(1)">✏️</button><button class="ibtn d" onclick="delNote(1)">🗑️</button></div></div><div style="font-size:12px;color:rgba(255,255,255,.55);line-height:1.65;white-space:pre-wrap">Utilizar banco de horas para aniversários de pessoas próximas como cônjuge, filhos, pais etc</div></div><div style="padding:12px;background:rgba(168,127,255,.10);border:1px solid rgba(168,127,255,.25);border-radius:12px"><div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:6px"><div style="display:flex;align-items:center;gap:7px;font-size:13px;font-weight:600;color:#A87FFF">💡 Licenças</div><div class="ibtns" style="flex-shrink:0"><button class="ibtn e" onclick="startEditNote(2)">✏️</button><button class="ibtn d" onclick="delNote(2)">🗑️</button></div></div><div style="font-size:12px;color:rgba(255,255,255,.55);line-height:1.65;white-space:pre-wrap">Utilizar horas do banco para estender licenças como casamento, nascimento de filhos etc</div></div></div>
+    <div style="border-top:1px solid rgba(255,255,255,.06);padding-top:14px">
+      <div style="font-size:12px;color:rgba(255,255,255,.5);margin-bottom:10px" id="nFormTitle">Nova Nota</div>
+      <div class="frow one"><div><label>TITULO</label><input type="text" id="nTitle" placeholder="Ex: Politica de banco de horas"></div></div>
+      <div class="frow one"><div><label>CONTEUDO</label><textarea id="nBody" style="min-height:90px" placeholder="Ex: Horas extras acumuladas podem ser compensadas em ate 6 meses..."></textarea></div></div>
+      <div class="frow">
+        <div><label>CATEGORIA</label>
+          <select id="nCat">
+            <option value="politica">Politica interna</option>
+            <option value="ideia">Ideia</option>
+            <option value="lembrete">Lembrete</option>
+            <option value="outro">Outro</option>
+          </select>
+        </div>
+        <div><label>COR</label>
+          <select id="nColor">
+            <option value="purple">Roxo</option>
+            <option value="blue">Azul</option>
+            <option value="green">Verde</option>
+            <option value="yellow">Amarelo</option>
+            <option value="red">Vermelho</option>
+          </select>
+        </div>
+      </div>
+      <div class="brow">
+        <button class="btn btn-p" onclick="saveNote()">Salvar Nota</button>
+        <button class="btn btn-g" onclick="clearNoteForm()" id="cancelNBtn" style="display:none">Cancelar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MAIN LAYOUT -->
+<div class="layout">
+  <div>
+    <div class="cal-grid" id="calGrid"><div class="month-card"><div class="month-title">Janeiro</div><div class="days-grid"><div class="day-hdr">Dom</div><div class="day-hdr">Seg</div><div class="day-hdr">Ter</div><div class="day-hdr">Qua</div><div class="day-hdr">Qui</div><div class="day-hdr">Sex</div><div class="day-hdr">Sab</div><div></div><div></div><div></div><div></div><div class="day hol" style="" onclick="onDay('2026-01-01')">1</div><div class="day" style="" onclick="onDay('2026-01-02')">2</div><div class="day wknd" style="" onclick="onDay('2026-01-03')">3</div><div class="day wknd" style="" onclick="onDay('2026-01-04')">4</div><div class="day" style="" onclick="onDay('2026-01-05')">5</div><div class="day" style="" onclick="onDay('2026-01-06')">6</div><div class="day" style="" onclick="onDay('2026-01-07')">7</div><div class="day" style="" onclick="onDay('2026-01-08')">8</div><div class="day" style="" onclick="onDay('2026-01-09')">9</div><div class="day wknd" style="" onclick="onDay('2026-01-10')">10</div><div class="day wknd" style="" onclick="onDay('2026-01-11')">11</div><div class="day" style="" onclick="onDay('2026-01-12')">12</div><div class="day" style="" onclick="onDay('2026-01-13')">13</div><div class="day" style="" onclick="onDay('2026-01-14')">14</div><div class="day" style="" onclick="onDay('2026-01-15')">15</div><div class="day" style="" onclick="onDay('2026-01-16')">16</div><div class="day wknd" style="" onclick="onDay('2026-01-17')">17</div><div class="day wknd" style="" onclick="onDay('2026-01-18')">18</div><div class="day" style="" onclick="onDay('2026-01-19')">19</div><div class="day" style="" onclick="onDay('2026-01-20')">20</div><div class="day" style="" onclick="onDay('2026-01-21')">21</div><div class="day" style="" onclick="onDay('2026-01-22')">22</div><div class="day" style="" onclick="onDay('2026-01-23')">23</div><div class="day wknd" style="" onclick="onDay('2026-01-24')">24</div><div class="day wknd" style="" onclick="onDay('2026-01-25')">25</div><div class="day" style="" onclick="onDay('2026-01-26')">26</div><div class="day" style="" onclick="onDay('2026-01-27')">27</div><div class="day" style="" onclick="onDay('2026-01-28')">28</div><div class="day" style="" onclick="onDay('2026-01-29')">29</div><div class="day" style="" onclick="onDay('2026-01-30')">30</div><div class="day wknd" style="" onclick="onDay('2026-01-31')">31</div></div></div><div class="month-card"><div class="month-title">Fevereiro</div><div class="days-grid"><div class="day-hdr">Dom</div><div class="day-hdr">Seg</div><div class="day-hdr">Ter</div><div class="day-hdr">Qua</div><div class="day-hdr">Qui</div><div class="day-hdr">Sex</div><div class="day-hdr">Sab</div><div class="day wknd" style="" onclick="onDay('2026-02-01')">1</div><div class="day" style="" onclick="onDay('2026-02-02')">2</div><div class="day" style="" onclick="onDay('2026-02-03')">3</div><div class="day" style="" onclick="onDay('2026-02-04')">4</div><div class="day" style="" onclick="onDay('2026-02-05')">5</div><div class="day" style="" onclick="onDay('2026-02-06')">6</div><div class="day wknd" style="" onclick="onDay('2026-02-07')">7</div><div class="day wknd" style="" onclick="onDay('2026-02-08')">8</div><div class="day" style="" onclick="onDay('2026-02-09')">9</div><div class="day" style="" onclick="onDay('2026-02-10')">10</div><div class="day" style="" onclick="onDay('2026-02-11')">11</div><div class="day" style="" onclick="onDay('2026-02-12')">12</div><div class="day" style="" onclick="onDay('2026-02-13')">13</div><div class="day wknd" style="" onclick="onDay('2026-02-14')">14</div><div class="day wknd" style="" onclick="onDay('2026-02-15')">15</div><div class="day" style="" onclick="onDay('2026-02-16')">16</div><div class="day hol" style="" onclick="onDay('2026-02-17')">17</div><div class="day" style="" onclick="onDay('2026-02-18')">18</div><div class="day" style="" onclick="onDay('2026-02-19')">19</div><div class="day" style="" onclick="onDay('2026-02-20')">20</div><div class="day wknd" style="" onclick="onDay('2026-02-21')">21</div><div class="day wknd" style="" onclick="onDay('2026-02-22')">22</div><div class="day" style="" onclick="onDay('2026-02-23')">23</div><div class="day" style="" onclick="onDay('2026-02-24')">24</div><div class="day" style="" onclick="onDay('2026-02-25')">25</div><div class="day" style="" onclick="onDay('2026-02-26')">26</div><div class="day" style="" onclick="onDay('2026-02-27')">27</div><div class="day wknd" style="" onclick="onDay('2026-02-28')">28</div></div></div><div class="month-card"><div class="month-title">Marco</div><div class="days-grid"><div class="day-hdr">Dom</div><div class="day-hdr">Seg</div><div class="day-hdr">Ter</div><div class="day-hdr">Qua</div><div class="day-hdr">Qui</div><div class="day-hdr">Sex</div><div class="day-hdr">Sab</div><div class="day wknd" style="" onclick="onDay('2026-03-01')">1</div><div class="day" style="" onclick="onDay('2026-03-02')">2</div><div class="day" style="" onclick="onDay('2026-03-03')">3</div><div class="day" style="" onclick="onDay('2026-03-04')">4</div><div class="day" style="" onclick="onDay('2026-03-05')">5</div><div class="day" style="" onclick="onDay('2026-03-06')">6</div><div class="day wknd" style="" onclick="onDay('2026-03-07')">7</div><div class="day wknd" style="" onclick="onDay('2026-03-08')">8</div><div class="day" style="" onclick="onDay('2026-03-09')">9</div><div class="day" style="" onclick="onDay('2026-03-10')">10</div><div class="day" style="" onclick="onDay('2026-03-11')">11</div><div class="day" style="" onclick="onDay('2026-03-12')">12</div><div class="day sug" style="background:rgba(255,217,61,.12);border-color:#FFD93D44;" onclick="onDay('2026-03-13')">13<div class="dot" style="background:#FFD93D"></div></div><div class="day wknd" style="" onclick="onDay('2026-03-14')">14</div><div class="day wknd" style="" onclick="onDay('2026-03-15')">15</div><div class="day" style="" onclick="onDay('2026-03-16')">16</div><div class="day" style="" onclick="onDay('2026-03-17')">17</div><div class="day" style="" onclick="onDay('2026-03-18')">18</div><div class="day" style="" onclick="onDay('2026-03-19')">19</div><div class="day sug" style="background:rgba(255,217,61,.12);border-color:#FFD93D44;" onclick="onDay('2026-03-20')">20<div class="dot" style="background:#FFD93D"></div></div><div class="day wknd" style="" onclick="onDay('2026-03-21')">21</div><div class="day wknd" style="" onclick="onDay('2026-03-22')">22</div><div class="day" style="" onclick="onDay('2026-03-23')">23</div><div class="day" style="" onclick="onDay('2026-03-24')">24</div><div class="day" style="" onclick="onDay('2026-03-25')">25</div><div class="day" style="" onclick="onDay('2026-03-26')">26</div><div class="day" style="" onclick="onDay('2026-03-27')">27</div><div class="day wknd" style="" onclick="onDay('2026-03-28')">28</div><div class="day wknd" style="" onclick="onDay('2026-03-29')">29</div><div class="day" style="" onclick="onDay('2026-03-30')">30</div><div class="day" style="" onclick="onDay('2026-03-31')">31</div></div></div><div class="month-card"><div class="month-title">Abril</div><div class="days-grid"><div class="day-hdr">Dom</div><div class="day-hdr">Seg</div><div class="day-hdr">Ter</div><div class="day-hdr">Qua</div><div class="day-hdr">Qui</div><div class="day-hdr">Sex</div><div class="day-hdr">Sab</div><div></div><div></div><div></div><div class="day" style="" onclick="onDay('2026-04-01')">1</div><div class="day sug" style="background:rgba(255,217,61,.12);border-color:#FFD93D44;" onclick="onDay('2026-04-02')">2<div class="dot" style="background:#FFD93D"></div></div><div class="day hol" style="" onclick="onDay('2026-04-03')">3</div><div class="day wknd" style="" onclick="onDay('2026-04-04')">4</div><div class="day wknd hol" style="" onclick="onDay('2026-04-05')">5</div><div class="day sug" style="background:rgba(255,107,107,.12);border-color:#FF6B6B44;" onclick="onDay('2026-04-06')">6<div class="dot" style="background:#FF6B6B"></div></div><div class="day" style="" onclick="onDay('2026-04-07')">7</div><div class="day" style="" onclick="onDay('2026-04-08')">8</div><div class="day" style="" onclick="onDay('2026-04-09')">9</div><div class="day" style="" onclick="onDay('2026-04-10')">10</div><div class="day wknd" style="" onclick="onDay('2026-04-11')">11</div><div class="day wknd" style="" onclick="onDay('2026-04-12')">12</div><div class="day" style="" onclick="onDay('2026-04-13')">13</div><div class="day" style="" onclick="onDay('2026-04-14')">14</div><div class="day" style="" onclick="onDay('2026-04-15')">15</div><div class="day" style="" onclick="onDay('2026-04-16')">16</div><div class="day" style="" onclick="onDay('2026-04-17')">17</div><div class="day wknd" style="" onclick="onDay('2026-04-18')">18</div><div class="day wknd" style="" onclick="onDay('2026-04-19')">19</div><div class="day sug" style="background:rgba(255,107,107,.12);border-color:#FF6B6B44;" onclick="onDay('2026-04-20')">20<div class="dot" style="background:#FF6B6B"></div></div><div class="day hol" style="" onclick="onDay('2026-04-21')">21</div><div class="day" style="" onclick="onDay('2026-04-22')">22</div><div class="day" style="" onclick="onDay('2026-04-23')">23</div><div class="day" style="" onclick="onDay('2026-04-24')">24</div><div class="day wknd" style="" onclick="onDay('2026-04-25')">25</div><div class="day wknd" style="" onclick="onDay('2026-04-26')">26</div><div class="day" style="" onclick="onDay('2026-04-27')">27</div><div class="day" style="" onclick="onDay('2026-04-28')">28</div><div class="day" style="" onclick="onDay('2026-04-29')">29</div><div class="day sug" style="background:rgba(255,217,61,.12);border-color:#FFD93D44;" onclick="onDay('2026-04-30')">30<div class="dot" style="background:#FFD93D"></div></div></div></div><div class="month-card"><div class="month-title">Maio</div><div class="days-grid"><div class="day-hdr">Dom</div><div class="day-hdr">Seg</div><div class="day-hdr">Ter</div><div class="day-hdr">Qua</div><div class="day-hdr">Qui</div><div class="day-hdr">Sex</div><div class="day-hdr">Sab</div><div></div><div></div><div></div><div></div><div></div><div class="day hol" style="" onclick="onDay('2026-05-01')">1</div><div class="day wknd" style="" onclick="onDay('2026-05-02')">2</div><div class="day wknd" style="" onclick="onDay('2026-05-03')">3</div><div class="day" style="" onclick="onDay('2026-05-04')">4</div><div class="day" style="" onclick="onDay('2026-05-05')">5</div><div class="day" style="" onclick="onDay('2026-05-06')">6</div><div class="day" style="" onclick="onDay('2026-05-07')">7</div><div class="day" style="" onclick="onDay('2026-05-08')">8</div><div class="day wknd" style="" onclick="onDay('2026-05-09')">9</div><div class="day wknd" style="" onclick="onDay('2026-05-10')">10</div><div class="day" style="" onclick="onDay('2026-05-11')">11</div><div class="day" style="" onclick="onDay('2026-05-12')">12</div><div class="day" style="" onclick="onDay('2026-05-13')">13</div><div class="day" style="" onclick="onDay('2026-05-14')">14</div><div class="day" style="" onclick="onDay('2026-05-15')">15</div><div class="day wknd" style="" onclick="onDay('2026-05-16')">16</div><div class="day wknd" style="" onclick="onDay('2026-05-17')">17</div><div class="day" style="" onclick="onDay('2026-05-18')">18</div><div class="day" style="" onclick="onDay('2026-05-19')">19</div><div class="day" style="" onclick="onDay('2026-05-20')">20</div><div class="day" style="" onclick="onDay('2026-05-21')">21</div><div class="day" style="" onclick="onDay('2026-05-22')">22</div><div class="day wknd" style="" onclick="onDay('2026-05-23')">23</div><div class="day wknd" style="" onclick="onDay('2026-05-24')">24</div><div class="day" style="" onclick="onDay('2026-05-25')">25</div><div class="day" style="" onclick="onDay('2026-05-26')">26</div><div class="day" style="" onclick="onDay('2026-05-27')">27</div><div class="day" style="" onclick="onDay('2026-05-28')">28</div><div class="day sug" style="background:rgba(255,217,61,.12);border-color:#FFD93D44;" onclick="onDay('2026-05-29')">29<div class="dot" style="background:#FFD93D"></div></div><div class="day wknd" style="" onclick="onDay('2026-05-30')">30</div><div class="day wknd" style="" onclick="onDay('2026-05-31')">31</div></div></div><div class="month-card"><div class="month-title">Junho</div><div class="days-grid"><div class="day-hdr">Dom</div><div class="day-hdr">Seg</div><div class="day-hdr">Ter</div><div class="day-hdr">Qua</div><div class="day-hdr">Qui</div><div class="day-hdr">Sex</div><div class="day-hdr">Sab</div><div></div><div class="day" style="" onclick="onDay('2026-06-01')">1</div><div class="day" style="" onclick="onDay('2026-06-02')">2</div><div class="day" style="" onclick="onDay('2026-06-03')">3</div><div class="day hol" style="" onclick="onDay('2026-06-04')">4</div><div class="day sug" style="background:rgba(255,107,107,.12);border-color:#FF6B6B44;" onclick="onDay('2026-06-05')">5<div class="dot" style="background:#FF6B6B"></div></div><div class="day wknd" style="" onclick="onDay('2026-06-06')">6</div><div class="day wknd" style="" onclick="onDay('2026-06-07')">7</div><div class="day sug" style="background:rgba(107,203,119,.12);border-color:#6BCB7744;" onclick="onDay('2026-06-08')">8<div class="dot" style="background:#6BCB77"></div></div><div class="day" style="" onclick="onDay('2026-06-09')">9</div><div class="day" style="" onclick="onDay('2026-06-10')">10</div><div class="day" style="" onclick="onDay('2026-06-11')">11</div><div class="day sug" style="background:rgba(255,217,61,.12);border-color:#FFD93D44;" onclick="onDay('2026-06-12')">12<div class="dot" style="background:#FFD93D"></div></div><div class="day wknd" style="" onclick="onDay('2026-06-13')">13</div><div class="day wknd" style="" onclick="onDay('2026-06-14')">14</div><div class="day sug" style="background:rgba(255,217,61,.12);border-color:#FFD93D44;" onclick="onDay('2026-06-15')">15<div class="dot" style="background:#FFD93D"></div></div><div class="day sug" style="background:rgba(255,217,61,.12);border-color:#FFD93D44;" onclick="onDay('2026-06-16')">16<div class="dot" style="background:#FFD93D"></div></div><div class="day sug" style="background:rgba(255,217,61,.12);border-color:#FFD93D44;" onclick="onDay('2026-06-17')">17<div class="dot" style="background:#FFD93D"></div></div><div class="day sug" style="background:rgba(255,217,61,.12);border-color:#FFD93D44;" onclick="onDay('2026-06-18')">18<div class="dot" style="background:#FFD93D"></div></div><div class="day sug" style="background:rgba(255,217,61,.12);border-color:#FFD93D44;" onclick="onDay('2026-06-19')">19<div class="dot" style="background:#FFD93D"></div></div><div class="day wknd" style="" onclick="onDay('2026-06-20')">20</div><div class="day wknd" style="" onclick="onDay('2026-06-21')">21</div><div class="day sug" style="background:rgba(255,217,61,.12);border-color:#FFD93D44;" onclick="onDay('2026-06-22')">22<div class="dot" style="background:#FFD93D"></div></div><div class="day sug" style="background:rgba(255,217,61,.12);border-color:#FFD93D44;" onclick="onDay('2026-06-23')">23<div class="dot" style="background:#FFD93D"></div></div><div class="day sug" style="background:rgba(255,217,61,.12);border-color:#FFD93D44;" onclick="onDay('2026-06-24')">24<div class="dot" style="background:#FFD93D"></div></div><div class="day sug" style="background:rgba(255,217,61,.12);border-color:#FFD93D44;" onclick="onDay('2026-06-25')">25<div class="dot" style="background:#FFD93D"></div></div><div class="day sug" style="background:rgba(255,217,61,.12);border-color:#FFD93D44;" onclick="onDay('2026-06-26')">26<div class="dot" style="background:#FFD93D"></div></div><div class="day wknd" style="" onclick="onDay('2026-06-27')">27</div><div class="day wknd" style="" onclick="onDay('2026-06-28')">28</div><div class="day sug" style="background:rgba(255,217,61,.12);border-color:#FFD93D44;" onclick="onDay('2026-06-29')">29<div class="dot" style="background:#FFD93D"></div></div><div class="day sug" style="background:rgba(255,217,61,.12);border-color:#FFD93D44;" onclick="onDay('2026-06-30')">30<div class="dot" style="background:#FFD93D"></div></div></div></div><div class="month-card"><div class="month-title">Julho</div><div class="days-grid"><div class="day-hdr">Dom</div><div class="day-hdr">Seg</div><div class="day-hdr">Ter</div><div class="day-hdr">Qua</div><div class="day-hdr">Qui</div><div class="day-hdr">Sex</div><div class="day-hdr">Sab</div><div></div><div></div><div></div><div class="day sug" style="background:rgba(255,217,61,.12);border-color:#FFD93D44;" onclick="onDay('2026-07-01')">1<div class="dot" style="background:#FFD93D"></div></div><div class="day sug" style="background:rgba(255,217,61,.12);border-color:#FFD93D44;" onclick="onDay('2026-07-02')">2<div class="dot" style="background:#FFD93D"></div></div><div class="day sug" style="background:rgba(255,217,61,.12);border-color:#FFD93D44;" onclick="onDay('2026-07-03')">3<div class="dot" style="background:#FFD93D"></div></div><div class="day wknd" style="" onclick="onDay('2026-07-04')">4</div><div class="day wknd" style="" onclick="onDay('2026-07-05')">5</div><div class="day" style="" onclick="onDay('2026-07-06')">6</div><div class="day" style="" onclick="onDay('2026-07-07')">7</div><div class="day" style="" onclick="onDay('2026-07-08')">8</div><div class="day" style="" onclick="onDay('2026-07-09')">9</div><div class="day" style="" onclick="onDay('2026-07-10')">10</div><div class="day wknd" style="" onclick="onDay('2026-07-11')">11</div><div class="day wknd" style="" onclick="onDay('2026-07-12')">12</div><div class="day" style="" onclick="onDay('2026-07-13')">13</div><div class="day" style="" onclick="onDay('2026-07-14')">14</div><div class="day" style="" onclick="onDay('2026-07-15')">15</div><div class="day" style="" onclick="onDay('2026-07-16')">16</div><div class="day" style="" onclick="onDay('2026-07-17')">17</div><div class="day wknd" style="" onclick="onDay('2026-07-18')">18</div><div class="day wknd" style="" onclick="onDay('2026-07-19')">19</div><div class="day" style="" onclick="onDay('2026-07-20')">20</div><div class="day" style="" onclick="onDay('2026-07-21')">21</div><div class="day" style="" onclick="onDay('2026-07-22')">22</div><div class="day" style="" onclick="onDay('2026-07-23')">23</div><div class="day" style="" onclick="onDay('2026-07-24')">24</div><div class="day wknd" style="" onclick="onDay('2026-07-25')">25</div><div class="day wknd" style="" onclick="onDay('2026-07-26')">26</div><div class="day" style="" onclick="onDay('2026-07-27')">27</div><div class="day" style="" onclick="onDay('2026-07-28')">28</div><div class="day" style="" onclick="onDay('2026-07-29')">29</div><div class="day" style="" onclick="onDay('2026-07-30')">30</div><div class="day sug" style="background:rgba(255,217,61,.12);border-color:#FFD93D44;" onclick="onDay('2026-07-31')">31<div class="dot" style="background:#FFD93D"></div></div></div></div><div class="month-card"><div class="month-title">Agosto</div><div class="days-grid"><div class="day-hdr">Dom</div><div class="day-hdr">Seg</div><div class="day-hdr">Ter</div><div class="day-hdr">Qua</div><div class="day-hdr">Qui</div><div class="day-hdr">Sex</div><div class="day-hdr">Sab</div><div></div><div></div><div></div><div></div><div></div><div></div><div class="day wknd" style="" onclick="onDay('2026-08-01')">1</div><div class="day wknd" style="" onclick="onDay('2026-08-02')">2</div><div class="day sug" style="background:rgba(107,203,119,.12);border-color:#6BCB7744;" onclick="onDay('2026-08-03')">3<div class="dot" style="background:#6BCB77"></div></div><div class="day" style="" onclick="onDay('2026-08-04')">4</div><div class="day" style="" onclick="onDay('2026-08-05')">5</div><div class="day" style="" onclick="onDay('2026-08-06')">6</div><div class="day" style="" onclick="onDay('2026-08-07')">7</div><div class="day wknd" style="" onclick="onDay('2026-08-08')">8</div><div class="day wknd" style="" onclick="onDay('2026-08-09')">9</div><div class="day" style="" onclick="onDay('2026-08-10')">10</div><div class="day" style="" onclick="onDay('2026-08-11')">11</div><div class="day" style="" onclick="onDay('2026-08-12')">12</div><div class="day" style="" onclick="onDay('2026-08-13')">13</div><div class="day" style="" onclick="onDay('2026-08-14')">14</div><div class="day wknd" style="" onclick="onDay('2026-08-15')">15</div><div class="day wknd" style="" onclick="onDay('2026-08-16')">16</div><div class="day" style="" onclick="onDay('2026-08-17')">17</div><div class="day" style="" onclick="onDay('2026-08-18')">18</div><div class="day" style="" onclick="onDay('2026-08-19')">19</div><div class="day" style="" onclick="onDay('2026-08-20')">20</div><div class="day" style="" onclick="onDay('2026-08-21')">21</div><div class="day wknd" style="" onclick="onDay('2026-08-22')">22</div><div class="day wknd" style="" onclick="onDay('2026-08-23')">23</div><div class="day" style="" onclick="onDay('2026-08-24')">24</div><div class="day" style="" onclick="onDay('2026-08-25')">25</div><div class="day" style="" onclick="onDay('2026-08-26')">26</div><div class="day" style="" onclick="onDay('2026-08-27')">27</div><div class="day" style="" onclick="onDay('2026-08-28')">28</div><div class="day wknd" style="" onclick="onDay('2026-08-29')">29</div><div class="day wknd" style="" onclick="onDay('2026-08-30')">30</div><div class="day" style="" onclick="onDay('2026-08-31')">31</div></div></div><div class="month-card"><div class="month-title">Setembro</div><div class="days-grid"><div class="day-hdr">Dom</div><div class="day-hdr">Seg</div><div class="day-hdr">Ter</div><div class="day-hdr">Qua</div><div class="day-hdr">Qui</div><div class="day-hdr">Sex</div><div class="day-hdr">Sab</div><div></div><div></div><div class="day" style="" onclick="onDay('2026-09-01')">1</div><div class="day" style="" onclick="onDay('2026-09-02')">2</div><div class="day" style="" onclick="onDay('2026-09-03')">3</div><div class="day sug" style="background:rgba(255,107,107,.12);border-color:#FF6B6B44;" onclick="onDay('2026-09-04')">4<div class="dot" style="background:#FF6B6B"></div></div><div class="day wknd" style="" onclick="onDay('2026-09-05')">5</div><div class="day wknd" style="" onclick="onDay('2026-09-06')">6</div><div class="day hol" style="" onclick="onDay('2026-09-07')">7</div><div class="day" style="" onclick="onDay('2026-09-08')">8</div><div class="day" style="" onclick="onDay('2026-09-09')">9</div><div class="day" style="" onclick="onDay('2026-09-10')">10</div><div class="day" style="" onclick="onDay('2026-09-11')">11</div><div class="day wknd" style="" onclick="onDay('2026-09-12')">12</div><div class="day wknd" style="" onclick="onDay('2026-09-13')">13</div><div class="day" style="" onclick="onDay('2026-09-14')">14</div><div class="day" style="" onclick="onDay('2026-09-15')">15</div><div class="day" style="" onclick="onDay('2026-09-16')">16</div><div class="day" style="" onclick="onDay('2026-09-17')">17</div><div class="day" style="" onclick="onDay('2026-09-18')">18</div><div class="day wknd" style="" onclick="onDay('2026-09-19')">19</div><div class="day wknd" style="" onclick="onDay('2026-09-20')">20</div><div class="day" style="" onclick="onDay('2026-09-21')">21</div><div class="day" style="" onclick="onDay('2026-09-22')">22</div><div class="day" style="" onclick="onDay('2026-09-23')">23</div><div class="day" style="" onclick="onDay('2026-09-24')">24</div><div class="day" style="" onclick="onDay('2026-09-25')">25</div><div class="day wknd" style="" onclick="onDay('2026-09-26')">26</div><div class="day wknd" style="" onclick="onDay('2026-09-27')">27</div><div class="day" style="" onclick="onDay('2026-09-28')">28</div><div class="day" style="" onclick="onDay('2026-09-29')">29</div><div class="day" style="" onclick="onDay('2026-09-30')">30</div></div></div><div class="month-card"><div class="month-title">Outubro</div><div class="days-grid"><div class="day-hdr">Dom</div><div class="day-hdr">Seg</div><div class="day-hdr">Ter</div><div class="day-hdr">Qua</div><div class="day-hdr">Qui</div><div class="day-hdr">Sex</div><div class="day-hdr">Sab</div><div></div><div></div><div></div><div></div><div class="day" style="" onclick="onDay('2026-10-01')">1</div><div class="day" style="" onclick="onDay('2026-10-02')">2</div><div class="day wknd" style="" onclick="onDay('2026-10-03')">3</div><div class="day wknd" style="" onclick="onDay('2026-10-04')">4</div><div class="day" style="" onclick="onDay('2026-10-05')">5</div><div class="day" style="" onclick="onDay('2026-10-06')">6</div><div class="day" style="" onclick="onDay('2026-10-07')">7</div><div class="day" style="" onclick="onDay('2026-10-08')">8</div><div class="day sug" style="background:rgba(255,107,107,.12);border-color:#FF6B6B44;" onclick="onDay('2026-10-09')">9<div class="dot" style="background:#FF6B6B"></div></div><div class="day wknd" style="" onclick="onDay('2026-10-10')">10</div><div class="day wknd" style="" onclick="onDay('2026-10-11')">11</div><div class="day hol" style="" onclick="onDay('2026-10-12')">12</div><div class="day" style="" onclick="onDay('2026-10-13')">13</div><div class="day" style="" onclick="onDay('2026-10-14')">14</div><div class="day" style="" onclick="onDay('2026-10-15')">15</div><div class="day" style="" onclick="onDay('2026-10-16')">16</div><div class="day wknd" style="" onclick="onDay('2026-10-17')">17</div><div class="day wknd" style="" onclick="onDay('2026-10-18')">18</div><div class="day" style="" onclick="onDay('2026-10-19')">19</div><div class="day" style="" onclick="onDay('2026-10-20')">20</div><div class="day" style="" onclick="onDay('2026-10-21')">21</div><div class="day" style="" onclick="onDay('2026-10-22')">22</div><div class="day" style="" onclick="onDay('2026-10-23')">23</div><div class="day wknd" style="" onclick="onDay('2026-10-24')">24</div><div class="day wknd" style="" onclick="onDay('2026-10-25')">25</div><div class="day" style="" onclick="onDay('2026-10-26')">26</div><div class="day" style="" onclick="onDay('2026-10-27')">27</div><div class="day" style="" onclick="onDay('2026-10-28')">28</div><div class="day" style="" onclick="onDay('2026-10-29')">29</div><div class="day" style="" onclick="onDay('2026-10-30')">30</div><div class="day wknd" style="" onclick="onDay('2026-10-31')">31</div></div></div><div class="month-card"><div class="month-title">Novembro</div><div class="days-grid"><div class="day-hdr">Dom</div><div class="day-hdr">Seg</div><div class="day-hdr">Ter</div><div class="day-hdr">Qua</div><div class="day-hdr">Qui</div><div class="day-hdr">Sex</div><div class="day-hdr">Sab</div><div class="day wknd" style="" onclick="onDay('2026-11-01')">1</div><div class="day hol" style="" onclick="onDay('2026-11-02')">2</div><div class="day" style="" onclick="onDay('2026-11-03')">3</div><div class="day" style="" onclick="onDay('2026-11-04')">4</div><div class="day" style="" onclick="onDay('2026-11-05')">5</div><div class="day" style="" onclick="onDay('2026-11-06')">6</div><div class="day wknd" style="" onclick="onDay('2026-11-07')">7</div><div class="day wknd" style="" onclick="onDay('2026-11-08')">8</div><div class="day" style="" onclick="onDay('2026-11-09')">9</div><div class="day" style="" onclick="onDay('2026-11-10')">10</div><div class="day" style="" onclick="onDay('2026-11-11')">11</div><div class="day" style="" onclick="onDay('2026-11-12')">12</div><div class="day" style="" onclick="onDay('2026-11-13')">13</div><div class="day wknd" style="" onclick="onDay('2026-11-14')">14</div><div class="day wknd hol" style="" onclick="onDay('2026-11-15')">15</div><div class="day" style="" onclick="onDay('2026-11-16')">16</div><div class="day" style="" onclick="onDay('2026-11-17')">17</div><div class="day" style="" onclick="onDay('2026-11-18')">18</div><div class="day sug" style="background:rgba(255,217,61,.12);border-color:#FFD93D44;" onclick="onDay('2026-11-19')">19<div class="dot" style="background:#FFD93D"></div></div><div class="day hol" style="" onclick="onDay('2026-11-20')">20</div><div class="day wknd" style="" onclick="onDay('2026-11-21')">21</div><div class="day wknd" style="" onclick="onDay('2026-11-22')">22</div><div class="day" style="" onclick="onDay('2026-11-23')">23</div><div class="day" style="" onclick="onDay('2026-11-24')">24</div><div class="day" style="" onclick="onDay('2026-11-25')">25</div><div class="day" style="" onclick="onDay('2026-11-26')">26</div><div class="day" style="" onclick="onDay('2026-11-27')">27</div><div class="day wknd" style="" onclick="onDay('2026-11-28')">28</div><div class="day wknd" style="" onclick="onDay('2026-11-29')">29</div><div class="day" style="" onclick="onDay('2026-11-30')">30</div></div></div><div class="month-card"><div class="month-title">Dezembro</div><div class="days-grid"><div class="day-hdr">Dom</div><div class="day-hdr">Seg</div><div class="day-hdr">Ter</div><div class="day-hdr">Qua</div><div class="day-hdr">Qui</div><div class="day-hdr">Sex</div><div class="day-hdr">Sab</div><div></div><div></div><div class="day" style="" onclick="onDay('2026-12-01')">1</div><div class="day" style="" onclick="onDay('2026-12-02')">2</div><div class="day" style="" onclick="onDay('2026-12-03')">3</div><div class="day" style="" onclick="onDay('2026-12-04')">4</div><div class="day wknd" style="" onclick="onDay('2026-12-05')">5</div><div class="day wknd" style="" onclick="onDay('2026-12-06')">6</div><div class="day" style="" onclick="onDay('2026-12-07')">7</div><div class="day" style="" onclick="onDay('2026-12-08')">8</div><div class="day" style="" onclick="onDay('2026-12-09')">9</div><div class="day" style="" onclick="onDay('2026-12-10')">10</div><div class="day" style="" onclick="onDay('2026-12-11')">11</div><div class="day wknd" style="" onclick="onDay('2026-12-12')">12</div><div class="day wknd" style="" onclick="onDay('2026-12-13')">13</div><div class="day" style="" onclick="onDay('2026-12-14')">14</div><div class="day" style="" onclick="onDay('2026-12-15')">15</div><div class="day" style="" onclick="onDay('2026-12-16')">16</div><div class="day" style="" onclick="onDay('2026-12-17')">17</div><div class="day" style="" onclick="onDay('2026-12-18')">18</div><div class="day wknd" style="" onclick="onDay('2026-12-19')">19</div><div class="day wknd" style="" onclick="onDay('2026-12-20')">20</div><div class="day" style="" onclick="onDay('2026-12-21')">21</div><div class="day" style="" onclick="onDay('2026-12-22')">22</div><div class="day" style="" onclick="onDay('2026-12-23')">23</div><div class="day sug" style="background:rgba(255,217,61,.12);border-color:#FFD93D44;" onclick="onDay('2026-12-24')">24<div class="dot" style="background:#FFD93D"></div></div><div class="day hol" style="" onclick="onDay('2026-12-25')">25</div><div class="day wknd" style="" onclick="onDay('2026-12-26')">26</div><div class="day wknd" style="" onclick="onDay('2026-12-27')">27</div><div class="day" style="" onclick="onDay('2026-12-28')">28</div><div class="day" style="" onclick="onDay('2026-12-29')">29</div><div class="day" style="" onclick="onDay('2026-12-30')">30</div><div class="day sug" style="background:rgba(77,150,255,.12);border-color:#4D96FF44;" onclick="onDay('2026-12-31')">31<div class="dot" style="background:#4D96FF"></div></div></div></div></div>
+    <div class="legend">
+      <div class="legend-item"><div class="ldot" style="background:var(--red)"></div>Emenda</div>
+      <div class="legend-item"><div class="ldot" style="background:var(--yellow)"></div>Saida Cedo</div>
+      <div class="legend-item"><div class="ldot" style="background:var(--green)"></div>Entrada Tarde</div>
+      <div class="legend-item"><div class="ldot" style="background:var(--blue)"></div>Folga</div>
+      <div class="legend-item"><div class="ldot" style="background:var(--red);opacity:.5"></div>Feriado</div>
+    </div>
+  </div>
+
+  <div class="sidebar">
+    <div class="detail-card" id="detailCard">
+      <div style="font-size:11px;letter-spacing:3px;color:rgba(168,127,255,.7);margin-bottom:10px">DIA SELECIONADO</div>
+      <div id="detailDate" style="font-family:'Syne',sans-serif;font-weight:700;font-size:22px;margin-bottom:6px">02/01</div>
+      <div id="detailHol" style="font-size:12px;color:var(--red);margin-bottom:8px;display:none"></div>
+      <div id="detailType" style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;"><span style="font-size:20px">🔗</span><span style="font-size:14px;font-weight:600;color:#FF6B6B">Emenda Ano Novo</span></div>
+      <div id="detailDesc" style="font-size: 13px; color: rgba(255, 255, 255, 0.55); line-height: 1.6; display: block;">Emenda com Ano Novo - quinta/sexta apos feriado de segunda.</div>
+      <div id="detailEditBtn" style="margin-top: 12px; display: block;">
+        <button class="btn btn-g" style="width:100%;font-size:12px" onclick="editFromDetail()">Editar este dia</button>
+      </div>
+    </div>
+
+    <div class="side-card">
+      <div class="side-lbl">PROXIMAS OPORTUNIDADES</div>
+      <div id="upcomingList"><div class="uitem" onclick="onDay('2026-04-02')" style="background:rgba(255,217,61,.12);border-color:#FFD93D22"><div style="font-size:18px;flex-shrink:0">🌅</div><div><div style="font-size:12px;font-weight:600;color:#FFD93D">Sexta antecipada</div><div style="font-size:11px;color:rgba(255,255,255,.35)">02/04 - Abril</div></div></div><div class="uitem" onclick="onDay('2026-04-06')" style="background:rgba(255,107,107,.12);border-color:#FF6B6B22"><div style="font-size:18px;flex-shrink:0">🔗</div><div><div style="font-size:12px;font-weight:600;color:#FF6B6B">Estender o feriado de Páscoa</div><div style="font-size:11px;color:rgba(255,255,255,.35)">06/04 - Abril</div></div></div><div class="uitem" onclick="onDay('2026-04-20')" style="background:rgba(255,107,107,.12);border-color:#FF6B6B22"><div style="font-size:18px;flex-shrink:0">🔗</div><div><div style="font-size:12px;font-weight:600;color:#FF6B6B">Emenda Tiradentes</div><div style="font-size:11px;color:rgba(255,255,255,.35)">20/04 - Abril</div></div></div><div class="uitem" onclick="onDay('2026-04-30')" style="background:rgba(255,217,61,.12);border-color:#FFD93D22"><div style="font-size:18px;flex-shrink:0">🌅</div><div><div style="font-size:12px;font-weight:600;color:#FFD93D">Sexta antecipada</div><div style="font-size:11px;color:rgba(255,255,255,.35)">30/04 - Abril</div></div></div><div class="uitem" onclick="onDay('2026-05-29')" style="background:rgba(255,217,61,.12);border-color:#FFD93D22"><div style="font-size:18px;flex-shrink:0">🌅</div><div><div style="font-size:12px;font-weight:600;color:#FFD93D">Sexta antecipada</div><div style="font-size:11px;color:rgba(255,255,255,.35)">29/05 - Maio</div></div></div><div class="uitem" onclick="onDay('2026-06-05')" style="background:rgba(255,107,107,.12);border-color:#FF6B6B22"><div style="font-size:18px;flex-shrink:0">🔗</div><div><div style="font-size:12px;font-weight:600;color:#FF6B6B">Emenda Corpus Christi</div><div style="font-size:11px;color:rgba(255,255,255,.35)">05/06 - Junho</div></div></div><div class="uitem" onclick="onDay('2026-06-08')" style="background:rgba(107,203,119,.12);border-color:#6BCB7722"><div style="font-size:18px;flex-shrink:0">☕</div><div><div style="font-size:12px;font-weight:600;color:#6BCB77">Segunda leve</div><div style="font-size:11px;color:rgba(255,255,255,.35)">08/06 - Junho</div></div></div><div class="uitem" onclick="onDay('2026-06-12')" style="background:rgba(255,217,61,.12);border-color:#FFD93D22"><div style="font-size:18px;flex-shrink:0">🌅</div><div><div style="font-size:12px;font-weight:600;color:#FFD93D">Dia dos namorados</div><div style="font-size:11px;color:rgba(255,255,255,.35)">12/06 - Junho</div></div></div></div>
+    </div>
+
+    <div class="side-card" id="statsCard"><div class="side-lbl">RESUMO DO ANO</div><div class="srow"><div style="font-size:12px;color:rgba(255,255,255,.45)">🔗 Emenda</div><div style="font-size:14px;font-weight:700;color:#FF6B6B">5</div></div><div class="srow"><div style="font-size:12px;color:rgba(255,255,255,.45)">🌅 Saida Cedo</div><div style="font-size:14px;font-weight:700;color:#FFD93D">24</div></div><div class="srow"><div style="font-size:12px;color:rgba(255,255,255,.45)">☕ Entrada Tarde</div><div style="font-size:14px;font-weight:700;color:#6BCB77">2</div></div><div class="srow"><div style="font-size:12px;color:rgba(255,255,255,.45)">🎉 Folga</div><div style="font-size:14px;font-weight:700;color:#4D96FF">1</div></div><hr class="sdiv"><div class="srow"><div style="font-size:12px;color:rgba(255,255,255,.45)">Total de sugestoes</div><div style="font-size:14px;font-weight:700;color:var(--purple)">32</div></div></div>
+
+    <div class="side-card" id="notesSide" style="display: block;">
+      <div class="side-lbl">NOTAS LIVRES</div>
+      <div id="notesSideList" style="display:flex;flex-direction:column;gap:8px"><div style="padding:10px 12px;background:rgba(168,127,255,.10);border:1px solid rgba(168,127,255,.25);border-radius:10px"><div style="font-size:12px;font-weight:600;color:#A87FFF;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">💡 Férias estendidas</div><div style="font-size:11px;color:rgba(255,255,255,.4);margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Utilizar horas do banco para ganhar mais dias de férias</div></div><div style="padding:10px 12px;background:rgba(168,127,255,.10);border:1px solid rgba(168,127,255,.25);border-radius:10px"><div style="font-size:12px;font-weight:600;color:#A87FFF;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">💡 Aniversários</div><div style="font-size:11px;color:rgba(255,255,255,.4);margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Utilizar banco de horas para aniversários de pessoas próximas como cônjuge, filhos, pais etc</div></div><div style="padding:10px 12px;background:rgba(168,127,255,.10);border:1px solid rgba(168,127,255,.25);border-radius:10px"><div style="font-size:12px;font-weight:600;color:#A87FFF;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">💡 Licenças</div><div style="font-size:11px;color:rgba(255,255,255,.4);margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Utilizar horas do banco para estender licenças como casamento, nascimento de filhos etc</div></div></div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- Modal de Senha -->
+<div class="pwd-overlay" id="pwdOverlay">
+  <div class="pwd-box">
+    <h2>🔐 Modo Edição</h2>
+    <p>Digite a senha para ativar o editor</p>
+    <input type="password" id="pwdInput" placeholder="••••••••" onkeydown="if(event.key==='Enter')confirmPwd()">
+    <div class="pwd-err" id="pwdErr"></div>
+    <div class="pwd-btns">
+      <button class="pwd-cancel" onclick="closePwdModal()">Cancelar</button>
+      <button class="pwd-confirm" onclick="confirmPwd()">Entrar</button>
+    </div>
+  </div>
+</div>
+
+<div class="save-bar vis" id="saveBar" onclick="saveToFile()">Baixar calendario atualizado</div>
+<div class="toast" id="toast">Sugestao salva!</div>
+
+<script>
+const DEFAULT_HOLIDAYS = {
+  "2026-01-01": "Ano Novo",
+  "2026-02-17": "Carnaval",
+  "2026-04-03": "Sexta-Feira Santa",
+  "2026-04-05": "Pascoa",
+  "2026-04-21": "Tiradentes",
+  "2026-05-01": "Dia do Trabalho",
+  "2026-06-04": "Corpus Christi",
+  "2026-09-07": "Independencia",
+  "2026-10-12": "Nossa Sra. Aparecida",
+  "2026-11-02": "Finados",
+  "2026-11-15": "Proclamacao da Republica",
+  "2026-11-20": "Consciencia Negra",
+  "2026-12-25": "Natal"
+};
+const DEFAULT_SUGGESTIONS = {
+  "2026-06-05": {
+    "type": "emenda",
+    "label": "Emenda Corpus Christi",
+    "desc": "Sexta apos Corpus Christi - feriado quinta, emenda para longo fim de semana."
+  },
+  "2026-09-04": {
+    "type": "emenda",
+    "label": "Feriado antecipado",
+    "desc": "Sexta antes do feriado de Independencia - começar a semana devagar."
+  },
+  "2026-10-09": {
+    "type": "emenda",
+    "label": "Emenda Aparecida",
+    "desc": "Sexta antes de Nossa Sra. Aparecida - feriado segunda, 4 dias de descanso."
+  },
+  "2026-12-24": {
+    "type": "saida-cedo",
+    "label": "Saida ao meio-dia",
+    "desc": "Vespera de Natal - encerrar o expediente com a equipe animada."
+  },
+  "2026-12-31": {
+    "type": "folga",
+    "label": "Folga Vespera de Ano Novo",
+    "desc": "Encerrar o ano com a equipe descansada e motivada."
+  },
+  "2026-05-29": {
+    "type": "saida-cedo",
+    "label": "Sexta antecipada",
+    "desc": "Saida as 16h antes do fim de semana de maio."
+  },
+  "2026-07-31": {
+    "type": "saida-cedo",
+    "label": "Sexta de julho",
+    "desc": "Fim do mes + sexta: saida as 15h para fechar julho bem."
+  },
+  "2026-06-08": {
+    "type": "entrada-tarde",
+    "label": "Segunda leve",
+    "desc": "Entrada as 10h pos-feriado prolongado de Corpus Christi."
+  },
+  "2026-08-03": {
+    "type": "entrada-tarde",
+    "label": "Segunda de agosto",
+    "desc": "Inicio de agosto: entrada as 10h para energizar o time."
+  },
+  "2026-03-13": {
+    "type": "saida-cedo",
+    "label": "Sexta antecipada",
+    "desc": ""
+  },
+  "2026-03-20": {
+    "type": "saida-cedo",
+    "label": "Sexta antecipada",
+    "desc": "Saida as 15h - sexta livre sem feriado proximo, recompensar a equipe."
+  },
+  "2026-06-15": {
+    "type": "saida-cedo",
+    "label": "Copa do mundo",
+    "desc": "Saída antecipada para curtir os jogos da copa"
+  },
+  "2026-06-16": {
+    "type": "saida-cedo",
+    "label": "Copa do mundo",
+    "desc": "Saída antecipada para curtir os jogos da copa"
+  },
+  "2026-06-17": {
+    "type": "saida-cedo",
+    "label": "Copa do mundo",
+    "desc": "Saída antecipada para curtir os jogos da copa"
+  },
+  "2026-06-18": {
+    "type": "saida-cedo",
+    "label": "Copa do mundo",
+    "desc": "Saída antecipada para curtir os jogos da copa"
+  },
+  "2026-06-12": {
+    "type": "saida-cedo",
+    "label": "Dia dos namorados",
+    "desc": "Saída antecipada para curtir o dia"
+  },
+  "2026-06-19": {
+    "type": "saida-cedo",
+    "label": "Copa do mundo",
+    "desc": "Saída antecipada para curtir os jogos da copa"
+  },
+  "2026-06-22": {
+    "type": "saida-cedo",
+    "label": "Copa do mundo",
+    "desc": "Saída antecipada para curtir os jogos da copa"
+  },
+  "2026-06-23": {
+    "type": "saida-cedo",
+    "label": "Copa do mundo",
+    "desc": "Saída antecipada para curtir os jogos da copa"
+  },
+  "2026-06-24": {
+    "type": "saida-cedo",
+    "label": "Copa do mundo",
+    "desc": "Saída antecipada para curtir os jogos da copa"
+  },
+  "2026-06-25": {
+    "type": "saida-cedo",
+    "label": "Copa do mundo",
+    "desc": "Saída antecipada para curtir os jogos da copa"
+  },
+  "2026-06-26": {
+    "type": "saida-cedo",
+    "label": "Copa do mundo",
+    "desc": "Saída antecipada para curtir os jogos da copa"
+  },
+  "2026-06-29": {
+    "type": "saida-cedo",
+    "label": "Copa do mundo",
+    "desc": "Saída antecipada para curtir os jogos da copa"
+  },
+  "2026-06-30": {
+    "type": "saida-cedo",
+    "label": "Copa do mundo",
+    "desc": "Saída antecipada para curtir os jogos da copa"
+  },
+  "2026-07-01": {
+    "type": "saida-cedo",
+    "label": "Copa do mundo",
+    "desc": "Saída antecipada para curtir os jogos da copa"
+  },
+  "2026-07-02": {
+    "type": "saida-cedo",
+    "label": "Copa do mundo",
+    "desc": "Saída antecipada para curtir os jogos da copa"
+  },
+  "2026-07-03": {
+    "type": "saida-cedo",
+    "label": "Copa do mundo",
+    "desc": "Saída antecipada para curtir os jogos da copa"
+  },
+  "2026-04-02": {
+    "type": "saida-cedo",
+    "label": "Sexta antecipada",
+    "desc": "Saída antecipada para iniciar o feriado mais cedo"
+  },
+  "2026-04-30": {
+    "type": "saida-cedo",
+    "label": "Sexta antecipada",
+    "desc": "Emenda com Dia do Trabalhador - saída antecipada na quinta"
+  },
+  "2026-04-20": {
+    "type": "emenda",
+    "label": "Emenda Tiradentes",
+    "desc": "Feriado terça, emenda segunda"
+  },
+  "2026-11-19": {
+    "type": "saida-cedo",
+    "label": "Saida as 14h",
+    "desc": "Quinta antes do feriado do Dia da Consciência Negra"
+  },
+  "2026-04-06": {
+    "type": "emenda",
+    "label": "Estender o feriado de Páscoa",
+    "desc": "Tirar mais um dia ou metade dele"
+  }
+};
+const DEFAULT_NOTES = [
+  {
+    "title": "Férias estendidas",
+    "body": "Utilizar horas do banco para ganhar mais dias de férias",
+    "cat": "ideia",
+    "color": "purple"
+  },
+  {
+    "title": "Aniversários",
+    "body": "Utilizar banco de horas para aniversários de pessoas próximas como cônjuge, filhos, pais etc",
+    "cat": "ideia",
+    "color": "purple"
+  },
+  {
+    "title": "Licenças",
+    "body": "Utilizar horas do banco para estender licenças como casamento, nascimento de filhos etc",
+    "cat": "ideia",
+    "color": "purple"
+  }
+];
+
+const TYPES = {
+  emenda:         {color:"#FF6B6B",bg:"rgba(255,107,107,.12)",icon:"🔗",label:"Emenda"},
+  "saida-cedo":   {color:"#FFD93D",bg:"rgba(255,217,61,.12)", icon:"🌅",label:"Saida Cedo"},
+  "entrada-tarde":{color:"#6BCB77",bg:"rgba(107,203,119,.12)",icon:"☕",label:"Entrada Tarde"},
+  folga:          {color:"#4D96FF",bg:"rgba(77,150,255,.12)", icon:"🎉",label:"Folga"}
+};
+const NOTE_COLORS = {
+  purple:{color:"#A87FFF",bg:"rgba(168,127,255,.10)",border:"rgba(168,127,255,.25)"},
+  blue:  {color:"#4D96FF",bg:"rgba(77,150,255,.10)", border:"rgba(77,150,255,.25)"},
+  green: {color:"#6BCB77",bg:"rgba(107,203,119,.10)",border:"rgba(107,203,119,.25)"},
+  yellow:{color:"#FFD93D",bg:"rgba(255,217,61,.10)", border:"rgba(255,217,61,.25)"},
+  red:   {color:"#FF6B6B",bg:"rgba(255,107,107,.10)",border:"rgba(255,107,107,.25)"}
+};
+const NOTE_CATS = {politica:"📋",ideia:"💡",lembrete:"🔔",outro:"📌"};
+const MONTHS = ["Janeiro","Fevereiro","Marco","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
+const DAYS_S = ["Dom","Seg","Ter","Qua","Qui","Sex","Sab"];
+
+var HOLIDAYS    = JSON.parse(JSON.stringify(DEFAULT_HOLIDAYS));
+var SUGGESTIONS = JSON.parse(JSON.stringify(DEFAULT_SUGGESTIONS));
+var NOTES       = JSON.parse(JSON.stringify(DEFAULT_NOTES));
+var currentYear = 2026;
+var selectedKey = null;
+var activeFilter = "all";
+var editMode    = false;
+var editingSKey = null;
+var editingHKey = null;
+var editingNIdx = null;
+
+function toKey(y,m,d){ return y+"-"+String(m+1).padStart(2,"0")+"-"+String(d).padStart(2,"0"); }
+function esc(s){ return (s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+function showToast(msg){ var t=document.getElementById("toast"); t.textContent=msg; t.classList.add("vis"); setTimeout(function(){t.classList.remove("vis");},2500); }
+function markChanged(){ document.getElementById("saveBar").classList.add("vis"); }
+
+function changeYear(d){
+  currentYear += d;
+  document.getElementById("yearDisplay").textContent = currentYear;
+  document.getElementById("yearTitle").textContent = currentYear;
+  selectedKey = null;
+  renderAll();
+}
+
+// ── Senha do editor ──────────────────────────────────────────
+var EDIT_PASSWORD = "admin123"; // ← altere aqui a sua senha
+
+function toggleEdit(){
+  if(!editMode){
+    // Abre o modal para pedir senha
+    document.getElementById("pwdInput").value = "";
+    document.getElementById("pwdErr").textContent = "";
+    document.getElementById("pwdOverlay").classList.add("vis");
+    setTimeout(function(){ document.getElementById("pwdInput").focus(); }, 80);
+  } else {
+    // Fechar o editor direto, sem pedir senha
+    editMode = false;
+    var btn = document.getElementById("editToggle");
+    btn.classList.remove("active");
+    btn.textContent = "✏️ Editar Calendario";
+    document.getElementById("editPanel").classList.remove("vis");
+    renderCalendars();
+  }
+}
+
+function confirmPwd(){
+  var input = document.getElementById("pwdInput").value;
+  if(input === EDIT_PASSWORD){
+    closePwdModal();
+    editMode = true;
+    var btn = document.getElementById("editToggle");
+    btn.classList.add("active");
+    btn.textContent = "Fechar Editor";
+    document.getElementById("editPanel").classList.add("vis");
+    renderSuggestionList(); renderHolidayList(); renderNotesList();
+    renderCalendars();
+  } else {
+    document.getElementById("pwdErr").textContent = "Senha incorreta. Tente novamente.";
+    document.getElementById("pwdInput").value = "";
+    document.getElementById("pwdInput").focus();
+  }
+}
+
+function closePwdModal(){
+  document.getElementById("pwdOverlay").classList.remove("vis");
+}
+
+function switchTab(tab){
+  document.querySelectorAll(".etab").forEach(function(t){ t.classList.toggle("active", t.dataset.tab===tab); });
+  document.querySelectorAll(".esec").forEach(function(s){ s.classList.toggle("vis", s.id==="tab-"+tab); });
+}
+
+function renderCalendars(){
+  var grid = document.getElementById("calGrid");
+  grid.innerHTML = "";
+  for(var m=0; m<12; m++){
+    var card = document.createElement("div");
+    card.className = "month-card";
+    var first = new Date(currentYear,m,1).getDay();
+    var days  = new Date(currentYear,m+1,0).getDate();
+    var html  = '<div class="month-title">'+MONTHS[m]+'</div><div class="days-grid">';
+    DAYS_S.forEach(function(d){ html += '<div class="day-hdr">'+d+'</div>'; });
+    for(var i=0;i<first;i++) html += '<div></div>';
+    for(var d=1;d<=days;d++){
+      var key  = toKey(currentYear,m,d);
+      var isH  = !!HOLIDAYS[key];
+      var sug  = SUGGESTIONS[key];
+      var dow  = new Date(currentYear,m,d).getDay();
+      var wknd = dow===0||dow===6;
+      var match= !sug || activeFilter==="all" || sug.type===activeFilter;
+      var cls  = "day";
+      if(wknd)  cls += " wknd";
+      if(isH)   cls += " hol";
+      if(sug && match) cls += " sug";
+      if(selectedKey===key) cls += " sel";
+      if(editMode) cls += " emode";
+      var sty="", dot="";
+      if(sug && match){
+        var cfg=TYPES[sug.type];
+        sty="background:"+cfg.bg+";border-color:"+cfg.color+"44;";
+        dot='<div class="dot" style="background:'+cfg.color+'"></div>';
+      }
+      html += '<div class="'+cls+'" style="'+sty+'" onclick="onDay(\''+key+'\')">'+d+dot+'</div>';
+    }
+    html += "</div>";
+    card.innerHTML = html;
+    grid.appendChild(card);
+  }
+}
+
+function onDay(key){
+  if(editMode){
+    document.getElementById("sDate").value = key;
+    if(SUGGESTIONS[key]) startEditSuggestion(key);
+    switchTab("suggestions");
+    document.getElementById("editPanel").scrollIntoView({behavior:"smooth",block:"nearest"});
+  } else {
+    if(!SUGGESTIONS[key] && !HOLIDAYS[key]) return;
+    selectedKey = key;
+    renderCalendars();
+    renderDetail();
+  }
+}
+
+function renderDetail(){
+  var card = document.getElementById("detailCard");
+  var sug  = SUGGESTIONS[selectedKey];
+  var hol  = HOLIDAYS[selectedKey];
+  if(!selectedKey||(!sug&&!hol)){ card.classList.remove("vis"); return; }
+  card.classList.add("vis");
+  var parts = selectedKey.split("-");
+  document.getElementById("detailDate").textContent = parts[2]+"/"+parts[1];
+  var hEl = document.getElementById("detailHol");
+  if(hol){ hEl.textContent="🎌 "+hol; hEl.style.display="block"; } else { hEl.style.display="none"; }
+  var tEl=document.getElementById("detailType"), dEl=document.getElementById("detailDesc");
+  if(sug){
+    var cfg=TYPES[sug.type];
+    tEl.innerHTML='<span style="font-size:20px">'+cfg.icon+'</span><span style="font-size:14px;font-weight:600;color:'+cfg.color+'">'+esc(sug.label)+'</span>';
+    tEl.style.display="flex"; dEl.textContent=sug.desc; dEl.style.display="block";
+    document.getElementById("detailEditBtn").style.display="block";
+  } else { tEl.style.display="none"; dEl.style.display="none"; document.getElementById("detailEditBtn").style.display="none"; }
+}
+
+function editFromDetail(){
+  if(!editMode) toggleEdit();
+  if(selectedKey) startEditSuggestion(selectedKey);
+  document.getElementById("editPanel").scrollIntoView({behavior:"smooth"});
+}
+
+function renderSuggestionList(){
+  var list = document.getElementById("suggestionList");
+  var entries = Object.entries(SUGGESTIONS).sort(function(a,b){return a[0].localeCompare(b[0]);});
+  if(!entries.length){ list.innerHTML='<div style="font-size:12px;color:rgba(255,255,255,.3);text-align:center;padding:10px">Nenhuma sugestao.</div>'; return; }
+  list.innerHTML = entries.map(function(entry){
+    var key=entry[0], sug=entry[1];
+    var cfg=TYPES[sug.type]; var p=key.split("-");
+    return '<div class="eitem"><span style="font-size:16px">'+cfg.icon+'</span><div class="eitem-info"><div class="eitem-title" style="color:'+cfg.color+'">'+esc(sug.label)+'</div><div class="eitem-sub">'+p[2]+'/'+p[1]+'/'+p[0]+'</div></div><div class="ibtns"><button class="ibtn e" onclick="startEditSuggestion(\''+key+'\')">✏️</button><button class="ibtn d" onclick="delSuggestion(\''+key+'\')">🗑️</button></div></div>';
+  }).join("");
+}
+
+function startEditSuggestion(key){
+  editingSKey=key; var s=SUGGESTIONS[key];
+  document.getElementById("sDate").value=key;
+  document.getElementById("sType").value=s.type;
+  document.getElementById("sLabel").value=s.label;
+  document.getElementById("sDesc").value=s.desc;
+  document.getElementById("sFormTitle").textContent="Editando sugestao";
+  document.getElementById("cancelSBtn").style.display="inline-block";
+  document.getElementById("sHint").style.display="none";
+  switchTab("suggestions");
+}
+
+function clearSuggestionForm(){
+  editingSKey=null;
+  ["sDate","sLabel","sDesc"].forEach(function(id){document.getElementById(id).value="";});
+  document.getElementById("sType").value="emenda";
+  document.getElementById("sFormTitle").textContent="Nova Sugestao";
+  document.getElementById("cancelSBtn").style.display="none";
+  document.getElementById("sHint").style.display="block";
+}
+
+function saveSuggestion(){
+  var date=document.getElementById("sDate").value;
+  var type=document.getElementById("sType").value;
+  var label=document.getElementById("sLabel").value.trim();
+  var desc=document.getElementById("sDesc").value.trim();
+  if(!date||!label){ showToast("Preencha data e titulo!"); return; }
+  if(editingSKey && editingSKey!==date) delete SUGGESTIONS[editingSKey];
+  SUGGESTIONS[date]={type:type,label:label,desc:desc};
+  clearSuggestionForm(); markChanged(); renderAll(); showToast("Sugestao salva!");
+}
+
+function delSuggestion(key){
+  if(!confirm("Remover sugestao de "+key+"?")) return;
+  delete SUGGESTIONS[key];
+  if(selectedKey===key) selectedKey=null;
+  markChanged(); renderAll(); showToast("Sugestao removida.");
+}
+
+function renderHolidayList(){
+  var list=document.getElementById("holidayList");
+  var entries=Object.entries(HOLIDAYS).sort(function(a,b){return a[0].localeCompare(b[0]);});
+  if(!entries.length){ list.innerHTML='<div style="font-size:12px;color:rgba(255,255,255,.3);text-align:center;padding:10px">Nenhum feriado.</div>'; return; }
+  list.innerHTML=entries.map(function(entry){
+    var key=entry[0], name=entry[1]; var p=key.split("-");
+    return '<div class="eitem"><span style="font-size:16px">🎌</span><div class="eitem-info"><div class="eitem-title" style="color:var(--red)">'+esc(name)+'</div><div class="eitem-sub">'+p[2]+'/'+p[1]+'/'+p[0]+'</div></div><div class="ibtns"><button class="ibtn e" onclick="startEditHoliday(\''+key+'\')">✏️</button><button class="ibtn d" onclick="delHoliday(\''+key+'\')">🗑️</button></div></div>';
+  }).join("");
+}
+
+function startEditHoliday(key){
+  editingHKey=key;
+  document.getElementById("hDate").value=key;
+  document.getElementById("hName").value=HOLIDAYS[key];
+  document.getElementById("hFormTitle").textContent="Editando feriado";
+  document.getElementById("cancelHBtn").style.display="inline-block";
+  switchTab("holidays");
+}
+
+function clearHolidayForm(){
+  editingHKey=null;
+  document.getElementById("hDate").value="";
+  document.getElementById("hName").value="";
+  document.getElementById("hFormTitle").textContent="Novo Feriado";
+  document.getElementById("cancelHBtn").style.display="none";
+}
+
+function saveHoliday(){
+  var date=document.getElementById("hDate").value;
+  var name=document.getElementById("hName").value.trim();
+  if(!date||!name){ showToast("Preencha data e nome!"); return; }
+  if(editingHKey && editingHKey!==date) delete HOLIDAYS[editingHKey];
+  HOLIDAYS[date]=name;
+  clearHolidayForm(); markChanged(); renderAll(); showToast("Feriado salvo!");
+}
+
+function delHoliday(key){
+  if(!confirm("Remover feriado de "+key+"?")) return;
+  delete HOLIDAYS[key]; markChanged(); renderAll(); showToast("Feriado removido.");
+}
+
+function renderNotesList(){
+  var list=document.getElementById("notesList");
+  if(!NOTES.length){ list.innerHTML='<div style="font-size:12px;color:rgba(255,255,255,.3);text-align:center;padding:12px">Nenhuma nota. Adicione uma abaixo!</div>'; return; }
+  list.innerHTML=NOTES.map(function(note,i){
+    var cfg=NOTE_COLORS[note.color]||NOTE_COLORS.purple;
+    var icon=NOTE_CATS[note.cat]||"📌";
+    return '<div style="padding:12px;background:'+cfg.bg+';border:1px solid '+cfg.border+';border-radius:12px">'
+      +'<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:6px">'
+      +'<div style="display:flex;align-items:center;gap:7px;font-size:13px;font-weight:600;color:'+cfg.color+'">'+icon+' '+esc(note.title)+'</div>'
+      +'<div class="ibtns" style="flex-shrink:0"><button class="ibtn e" onclick="startEditNote('+i+')">✏️</button><button class="ibtn d" onclick="delNote('+i+')">🗑️</button></div>'
+      +'</div>'
+      +'<div style="font-size:12px;color:rgba(255,255,255,.55);line-height:1.65;white-space:pre-wrap">'+esc(note.body)+'</div>'
+      +'</div>';
+  }).join("");
+}
+
+function renderNotesSide(){
+  var card=document.getElementById("notesSide");
+  var list=document.getElementById("notesSideList");
+  if(!NOTES.length){ card.style.display="none"; return; }
+  card.style.display="block";
+  list.innerHTML=NOTES.map(function(note){
+    var cfg=NOTE_COLORS[note.color]||NOTE_COLORS.purple;
+    var icon=NOTE_CATS[note.cat]||"📌";
+    return '<div style="padding:10px 12px;background:'+cfg.bg+';border:1px solid '+cfg.border+';border-radius:10px">'
+      +'<div style="font-size:12px;font-weight:600;color:'+cfg.color+';white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+icon+' '+esc(note.title)+'</div>'
+      +'<div style="font-size:11px;color:rgba(255,255,255,.4);margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(note.body)+'</div>'
+      +'</div>';
+  }).join("");
+}
+
+function startEditNote(i){
+  editingNIdx=i; var note=NOTES[i];
+  document.getElementById("nTitle").value=note.title;
+  document.getElementById("nBody").value=note.body;
+  document.getElementById("nCat").value=note.cat;
+  document.getElementById("nColor").value=note.color;
+  document.getElementById("nFormTitle").textContent="Editando nota";
+  document.getElementById("cancelNBtn").style.display="inline-block";
+  switchTab("notes");
+}
+
+function clearNoteForm(){
+  editingNIdx=null;
+  document.getElementById("nTitle").value="";
+  document.getElementById("nBody").value="";
+  document.getElementById("nCat").value="politica";
+  document.getElementById("nColor").value="purple";
+  document.getElementById("nFormTitle").textContent="Nova Nota";
+  document.getElementById("cancelNBtn").style.display="none";
+}
+
+function saveNote(){
+  var title=document.getElementById("nTitle").value.trim();
+  var body=document.getElementById("nBody").value.trim();
+  var cat=document.getElementById("nCat").value;
+  var color=document.getElementById("nColor").value;
+  if(!title){ showToast("De um titulo para a nota!"); return; }
+  var note={title:title,body:body,cat:cat,color:color};
+  if(editingNIdx!==null){ NOTES[editingNIdx]=note; } else { NOTES.push(note); }
+  clearNoteForm(); markChanged(); renderNotesList(); renderNotesSide(); showToast("Nota salva!");
+}
+
+function delNote(i){
+  if(!confirm("Remover esta nota?")) return;
+  NOTES.splice(i,1); markChanged(); renderNotesList(); renderNotesSide(); showToast("Nota removida.");
+}
+
+function renderUpcoming(){
+  var today=new Date();
+  var list=document.getElementById("upcomingList");
+  var entries=Object.entries(SUGGESTIONS)
+    .filter(function(e){ return new Date(e[0])>=today && e[0].startsWith(String(currentYear)); })
+    .filter(function(e){ return activeFilter==="all"||e[1].type===activeFilter; })
+    .sort(function(a,b){return a[0].localeCompare(b[0]);}).slice(0,8);
+  if(!entries.length){ list.innerHTML='<div style="font-size:12px;color:rgba(255,255,255,.3);text-align:center;padding:8px">Sem sugestoes futuras.</div>'; return; }
+  list.innerHTML=entries.map(function(entry){
+    var key=entry[0], sug=entry[1];
+    var cfg=TYPES[sug.type]; var p=key.split("-");
+    return '<div class="uitem" onclick="onDay(\''+key+'\')" style="background:'+cfg.bg+';border-color:'+cfg.color+'22">'
+      +'<div style="font-size:18px;flex-shrink:0">'+cfg.icon+'</div>'
+      +'<div><div style="font-size:12px;font-weight:600;color:'+cfg.color+'">'+esc(sug.label)+'</div>'
+      +'<div style="font-size:11px;color:rgba(255,255,255,.35)">'+p[2]+'/'+p[1]+' - '+MONTHS[parseInt(p[1])-1]+'</div></div>'
+      +'</div>';
+  }).join("");
+}
+
+function renderStats(){
+  var el=document.getElementById("statsCard");
+  var ys=Object.entries(SUGGESTIONS).filter(function(e){return e[0].startsWith(String(currentYear));});
+  var html='<div class="side-lbl">RESUMO DO ANO</div>';
+  Object.entries(TYPES).forEach(function(entry){
+    var type=entry[0], cfg=entry[1];
+    var count=ys.filter(function(e){return e[1].type===type;}).length;
+    html+='<div class="srow"><div style="font-size:12px;color:rgba(255,255,255,.45)">'+cfg.icon+' '+cfg.label+'</div><div style="font-size:14px;font-weight:700;color:'+cfg.color+'">'+count+'</div></div>';
+  });
+  html+='<hr class="sdiv"><div class="srow"><div style="font-size:12px;color:rgba(255,255,255,.45)">Total de sugestoes</div><div style="font-size:14px;font-weight:700;color:var(--purple)">'+ys.length+'</div></div>';
+  el.innerHTML=html;
+}
+
+function renderAll(){
+  renderCalendars(); renderDetail(); renderUpcoming(); renderStats(); renderNotesSide();
+  if(editMode){ renderSuggestionList(); renderHolidayList(); renderNotesList(); }
+}
+
+function saveToFile(){
+  var src = document.documentElement.outerHTML;
+  src = src
+    .replace(/const DEFAULT_HOLIDAYS = \{[\s\S]*?\};/, "const DEFAULT_HOLIDAYS = "+JSON.stringify(HOLIDAYS,null,2)+";")
+    .replace(/const DEFAULT_SUGGESTIONS = \{[\s\S]*?\};/, "const DEFAULT_SUGGESTIONS = "+JSON.stringify(SUGGESTIONS,null,2)+";")
+    .replace(/const DEFAULT_NOTES = \[[\s\S]*?\];/, "const DEFAULT_NOTES = "+JSON.stringify(NOTES,null,2)+";")
+    .replace(/var currentYear = \d+;/, "var currentYear = "+currentYear+";");
+  var blob=new Blob([src],{type:"text/html;charset=utf-8"});
+  var a=document.createElement("a");
+  a.href=URL.createObjectURL(blob);
+  a.download="calendario-compensacao-"+currentYear+".html";
+  a.click(); URL.revokeObjectURL(a.href);
+  document.getElementById("saveBar").classList.remove("vis");
+  showToast("Arquivo baixado com suas edicoes!");
+}
+
+document.getElementById("filters").addEventListener("click", function(e){
+  var btn=e.target.closest(".filter-btn");
+  if(!btn) return;
+  document.querySelectorAll(".filter-btn").forEach(function(b){b.classList.remove("active");});
+  btn.classList.add("active");
+  activeFilter=btn.dataset.filter;
+  renderAll();
+});
+
+renderAll();
+</script>
+
+
+</body></html>
